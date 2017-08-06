@@ -10,6 +10,7 @@
 #include "battle_data/battle_state.h"
 #include "battle_data/pkmn_bank.h"
 #include "battle_text/battle_textbox_gfx.h"
+#include "hpboxes/hpbox_positional_data.h"
 #include <pokeagb/pokeagb.h>
 
 #define OBJID_HIDE(objid) objects[objid].final_oam.affine_mode = 2
@@ -37,6 +38,10 @@ extern u8 get_ability(struct Pokemon *p);
 extern u8 load_dmg_type_icon(u8 type, s16 x, s16 y, u8 tag);
 extern u8 load_dmg_category_icon(u8 category, s16 x, s16 y, u8 tag);
 extern void obj_delete_free_and_keep_pal(struct Object *obj);
+extern void status_graphical_update(u8 bank, enum Effect status);
+
+extern u8 spawn_pkmn_obj_slot(u8 slot, u16 tag);
+extern u8 spawn_pkmn_backsprite_obj_slot(u8 slot, u16 tag);
 
 static const pchar str_no_item[] = _("None");
 
@@ -250,10 +255,14 @@ void switch_setup(void) {
         }
     }
     if ((p_bank[PLAYER_SINGLES_BANK]->objid) < 0x3F) {
+        dprintf("player: x=%d, y=%d\n", objects[p_bank[PLAYER_SINGLES_BANK]->objid].pos1.x,
+                objects[p_bank[PLAYER_SINGLES_BANK]->objid].pos1.y);
         p_bank[PLAYER_SINGLES_BANK]->objid = 0x3F;
     }
 
     if ((p_bank[OPPONENT_SINGLES_BANK]->objid) < 0x3F) {
+        dprintf("opponent: x=%d, y=%d\n", objects[p_bank[OPPONENT_SINGLES_BANK]->objid].pos1.x,
+                objects[p_bank[OPPONENT_SINGLES_BANK]->objid].pos1.y);
         p_bank[OPPONENT_SINGLES_BANK]->objid = 0x3F;
     }
 
@@ -630,9 +639,17 @@ void switch_load_battle_scene(void) {
             battle_master->switch_main.icon_objid[i] = 0x3F;
         }
     }
-    obj_and_aux_reset_all();
     free(bgid_get_tilemap(1));
-    rboxes_free();
+    reset_boxes();
+    obj_and_aux_reset_all();
+    bgid_mod_x_offset(0, 0, 0);
+    bgid_mod_y_offset(0, 0, 0);
+    bgid_mod_x_offset(1, 0, 0);
+    bgid_mod_y_offset(1, 0, 0);
+    bgid_mod_x_offset(2, 0, 0);
+    bgid_mod_y_offset(2, 0, 0);
+    bgid_mod_x_offset(3, 0, 0);
+    bgid_mod_y_offset(3, 0, 0);
     gpu_tile_bg_drop_all_sets(0);
     struct BgConfig bg0_config = {.padding = 0,
                                   .b_padding = 0,
@@ -668,7 +685,11 @@ void switch_load_battle_scene(void) {
                                   .bgid = 3};
     struct BgConfig bg_config_data[4] = {bg0_config, bg1_config, bg2_config, bg3_config};
     bg_vram_setup(0, (struct BgConfig *)&bg_config_data, 4);
+
+    // init textbox
     rbox_init_from_templates((struct TextboxTemplate *)0x8248330);
+    remo_reset_acknowledgement_flags();
+    battlebox_mark_usable();
 }
 
 #define SW_STATE_INIT 0
@@ -684,7 +705,7 @@ void switch_scene_main(void) {
     case SW_STATE_INIT:
         if (!pal_fade_control.active) {
             /* VRAM setup */
-            rboxes_free();
+            reset_boxes();
             switch_setup();
             super.multi_purpose_state_tracker++;
         }
@@ -754,7 +775,8 @@ void switch_scene_main(void) {
         break;
     case SW_STATE_LOAD_GFX: {
         /* Todo: extra method for initial loading and reloading */
-
+        memset((void *)(ADDR_VRAM), 0x0, 0x10000);
+        // copy image BG background
         void *char_base = (void *)0x6000000;
         void *map_base = (void *)0x600E000;
         lz77UnCompVram((void *)grass_bgTiles, char_base);
@@ -769,12 +791,43 @@ void switch_scene_main(void) {
         // write palettes
         gpu_pal_apply_compressed((void *)grass_bgPal, 0, 64);
         gpu_pal_apply((void *)bboxPal, 16 * 5, 32);
-        fade_screen(0xFFFFFFFF, 0, 16, 0, 0x0000);
 
-        gpu_sync_bg_show(3);
+        u8 objid_opp = spawn_pkmn_obj_slot(0, 0x100);
+        p_bank[OPPONENT_SINGLES_BANK]->objid = objid_opp;
+        objects[objid_opp].pos1.y = 20;
+
+        u8 slot_player = GET_SLOT_FROM_PTR((u32)&party_opponent[0], (u32)p_bank[PLAYER_SINGLES_BANK]->this_pkmn, 100);
+        u8 objid_player = spawn_pkmn_backsprite_obj_slot(slot_player, 0x810);
+
+        p_bank[PLAYER_SINGLES_BANK]->objid = objid_player;
+
+        objects[objid_player].pos1.x = 64;
+        objects[objid_player].pos1.y = 94;
+
+        objects[objid_opp].pos1.x = 178;
+        objects[objid_opp].pos1.y = 54;
+
+        spawn_hpbox_opponent(HPBOX_TAG_OPP_SW, HPBOX_OPP_SW_X, HPBOX_OPP_SW_Y);
+        spawn_hpbox_player(HPBOX_TAG_PLAYER_SINGLE, HPBOX_PLAYER_SINGLE_X, HPBOX_PLAYER_SINGLE_Y);
+
+        status_graphical_update(PLAYER_SINGLES_BANK, p_bank[PLAYER_SINGLES_BANK]->b_data.status);
+        status_graphical_update(OPPONENT_SINGLES_BANK, p_bank[OPPONENT_SINGLES_BANK]->b_data.status);
+
+        // write palettes
+        gpu_pal_apply_compressed((void *)grass_bgPal, 0, 64);
+        gpu_pal_apply((void *)bboxPal, 16 * 5, 32);
         super.multi_purpose_state_tracker++;
     } break;
     case 6:
+        gpu_sync_bg_show(3);
+        gpu_sync_bg_show(1);
+        gpu_sync_bg_show(2);
+        gpu_sync_bg_show(0);
+        bgid_mark_for_sync(3);
+        bgid_mark_for_sync(2);
+        bgid_mark_for_sync(1);
+        bgid_mark_for_sync(0);
+        fade_screen(0xFFFFFFFF, 0, 16, 0, 0x0000);
         super.multi_purpose_state_tracker = 0;
         extern void option_selection(void);
         set_callback1(option_selection);
