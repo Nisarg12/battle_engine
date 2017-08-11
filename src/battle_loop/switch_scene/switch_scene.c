@@ -690,6 +690,7 @@ void switch_load_battle_scene(void) {
     rbox_init_from_templates((struct TextboxTemplate *)0x8248330);
     remo_reset_acknowledgement_flags();
     battlebox_mark_usable();
+    battle_master->selected_option = 0;
 }
 
 #define SW_STATE_INIT 0
@@ -784,9 +785,7 @@ void switch_scene_main(void) {
 
         // copy textbox image
         char_base = (void *)0x600C000;
-        map_base = (void *)0x600F800;
         lz77UnCompVram((void *)bboxTiles, char_base);
-        memcpy(map_base, battle_textboxMap, sizeof(battle_textboxMap));
 
         // write palettes
         gpu_pal_apply_compressed((void *)grass_bgPal, 0, 64);
@@ -821,15 +820,14 @@ void switch_scene_main(void) {
     case 6:
         gpu_sync_bg_show(3);
         gpu_sync_bg_show(1);
-        gpu_sync_bg_show(2);
         gpu_sync_bg_show(0);
         bgid_mark_for_sync(3);
-        bgid_mark_for_sync(2);
         bgid_mark_for_sync(1);
         bgid_mark_for_sync(0);
         fade_screen(0xFFFFFFFF, 0, 16, 0, 0x0000);
         super.multi_purpose_state_tracker = 0;
         extern void option_selection(void);
-        set_callback1(option_selection);
+        extern void init_battle(void);
+        set_callback1(init_battle);
     }
 }
