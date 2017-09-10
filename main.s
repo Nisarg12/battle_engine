@@ -7,3 +7,4 @@
         .org 0x08800000
         .importobj "build/linked.o"
         .close
+
