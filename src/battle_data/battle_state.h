@@ -115,6 +115,7 @@ struct switch_menu {
     u8 slider_objid[3];
     u8 icon_objid[6];
     u8 position;
+    bool will_switch;
 };
 
 struct battle_main {

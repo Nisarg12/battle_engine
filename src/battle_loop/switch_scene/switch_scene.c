@@ -4,18 +4,21 @@
 
 #include "../generated/images/PSS_icons.h"
 #include "../generated/images/battle_terrains/grass/grass_bg.h"
+#include "../generated/images/battle_terrains/grass/grass_entry.h"
 #include "../generated/images/switch/switch_bg.h"
 #include "../generated/images/type_icons.h"
 #include "battle_data/battle_state.h"
 #include "battle_data/pkmn_bank.h"
 #include "battle_text/battle_textbox_gfx.h"
+#include "hpboxes/hpbox_positional_data.h"
 #include <pokeagb/pokeagb.h>
 
 #define OBJID_HIDE(objid) objects[objid].final_oam.affine_mode = 2
 #define OBJID_SHOW(objid) objects[objid].final_oam.affine_mode = 0
 #define rgb5(r, g, b) (u16)((r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10))
-#define STAT_COLOR(stat, pkmn)                                                                                                                       \
-    (nature_stat_boosted(stat, pkmn) ? &switch_color_green : (nature_stat_nerved(stat, pkmn) ? &switch_color_red : &switch_color))
+#define STAT_COLOR(stat, pkmn)                                                                                         \
+    (nature_stat_boosted(stat, pkmn) ? &switch_color_green                                                             \
+                                     : (nature_stat_nerved(stat, pkmn) ? &switch_color_red : &switch_color))
 
 #define SWB_ABILITY 0
 #define SWB_ITEM 1
@@ -34,6 +37,11 @@ extern void option_selection(void);
 extern u8 get_ability(struct Pokemon *p);
 extern u8 load_dmg_type_icon(u8 type, s16 x, s16 y, u8 tag);
 extern u8 load_dmg_category_icon(u8 category, s16 x, s16 y, u8 tag);
+extern void obj_delete_free_and_keep_pal(struct Object *obj);
+extern void status_graphical_update(u8 bank, enum Effect status);
+
+extern u8 spawn_pkmn_obj_slot(u8 slot, u16 tag);
+extern u8 spawn_pkmn_backsprite_obj_slot(u8 slot, u16 tag);
 
 static const pchar str_no_item[] = _("None");
 
@@ -194,14 +202,38 @@ const struct OamData icon_oam = {
 };
 
 void switch_setup(void) {
-    struct BgConfig bg0_config = {
-        .padding = 0, .b_padding = 0, .priority = 0, .palette = 0, .size = 0, .map_base = 31, .character_base = 0, .bgid = 0};
-    struct BgConfig bg1_config = {
-        .padding = 0, .b_padding = 0, .priority = 1, .palette = 0, .size = 0, .map_base = 30, .character_base = 2, .bgid = 1};
-    struct BgConfig bg2_config = {
-        .padding = 0, .b_padding = 0, .priority = 2, .palette = 0, .size = 0, .map_base = 29, .character_base = 1, .bgid = 2};
-    struct BgConfig bg3_config = {
-        .padding = 0, .b_padding = 0, .priority = 3, .palette = 0, .size = 1, .map_base = 28, .character_base = 3, .bgid = 3};
+    struct BgConfig bg0_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 0,
+                                  .palette = 0,
+                                  .size = 0,
+                                  .map_base = 31,
+                                  .character_base = 0,
+                                  .bgid = 0};
+    struct BgConfig bg1_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 1,
+                                  .palette = 0,
+                                  .size = 0,
+                                  .map_base = 30,
+                                  .character_base = 2,
+                                  .bgid = 1};
+    struct BgConfig bg2_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 2,
+                                  .palette = 0,
+                                  .size = 0,
+                                  .map_base = 29,
+                                  .character_base = 1,
+                                  .bgid = 2};
+    struct BgConfig bg3_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 3,
+                                  .palette = 0,
+                                  .size = 1,
+                                  .map_base = 28,
+                                  .character_base = 3,
+                                  .bgid = 3};
     struct BgConfig bg_config_data[4] = {bg0_config, bg1_config, bg2_config, bg3_config};
 
     bgid_mod_x_offset(0, 0, 0);
@@ -216,19 +248,26 @@ void switch_setup(void) {
     /* Hide all the objects on screen */
     for (u8 j = 0; j < 4; ++j) {
         if ((p_bank[OPPONENT_SINGLES_BANK]->objid_hpbox[j]) < 0x3F) {
-            OBJID_HIDE(p_bank[OPPONENT_SINGLES_BANK]->objid_hpbox[j]);
+            p_bank[OPPONENT_SINGLES_BANK]->objid_hpbox[j] = 0x3F;
         }
         if ((p_bank[PLAYER_SINGLES_BANK]->objid_hpbox[j]) < 0x3F) {
-            OBJID_HIDE(p_bank[PLAYER_SINGLES_BANK]->objid_hpbox[j]);
+            p_bank[PLAYER_SINGLES_BANK]->objid_hpbox[j] = 0x3F;
         }
     }
     if ((p_bank[PLAYER_SINGLES_BANK]->objid) < 0x3F) {
-        OBJID_HIDE(p_bank[PLAYER_SINGLES_BANK]->objid);
+        dprintf("player: x=%d, y=%d\n", objects[p_bank[PLAYER_SINGLES_BANK]->objid].pos1.x,
+                objects[p_bank[PLAYER_SINGLES_BANK]->objid].pos1.y);
+        p_bank[PLAYER_SINGLES_BANK]->objid = 0x3F;
     }
 
     if ((p_bank[OPPONENT_SINGLES_BANK]->objid) < 0x3F) {
-        OBJID_HIDE(p_bank[OPPONENT_SINGLES_BANK]->objid);
+        dprintf("opponent: x=%d, y=%d\n", objects[p_bank[OPPONENT_SINGLES_BANK]->objid].pos1.x,
+                objects[p_bank[OPPONENT_SINGLES_BANK]->objid].pos1.y);
+        p_bank[OPPONENT_SINGLES_BANK]->objid = 0x3F;
     }
+
+    /* because fuck you thats why */
+    obj_and_aux_reset_all();
     gpu_sync_bg_hide(1);
     gpu_sync_bg_hide(0);
 }
@@ -342,14 +381,18 @@ void switch_load_pokemon_icons(void) {
                                              .oam = &icon_oam,
                                              .animation = nullframe,
                                              .graphics = &icon_tiles,
-                                             .rotscale = ((current != 0) ? switch_scale_table : switch_scale_table_full),
+                                             .rotscale =
+                                                 ((current != 0) ? switch_scale_table : switch_scale_table_full),
                                              .callback = switch_icon_callback};
             if (current == 0) {
-                battle_master->switch_main.icon_objid[current] = template_instanciate_forward_search(&icon_template, 16, 10, 0);
+                battle_master->switch_main.icon_objid[current] =
+                    template_instanciate_forward_search(&icon_template, 16, 10, 0);
             } else if (current == 5)
-                battle_master->switch_main.icon_objid[current] = template_instanciate_forward_search(&icon_template, 16, 10 + 23 * i, 0);
+                battle_master->switch_main.icon_objid[current] =
+                    template_instanciate_forward_search(&icon_template, 16, 10 + 23 * i, 0);
             else {
-                battle_master->switch_main.icon_objid[current] = template_instanciate_forward_search(&icon_template, 16, 10 + 24 * i, 0);
+                battle_master->switch_main.icon_objid[current] =
+                    template_instanciate_forward_search(&icon_template, 16, 10 + 24 * i, 0);
             }
             current++;
         }
@@ -383,9 +426,12 @@ void switch_load_scroll_box(void) {
     struct SpriteTiles mid_gfx = {(void *)slider_midTiles, 512, SLIDER_GFX_TAG + 1};
     struct SpriteTiles bot_gfx = {(void *)slider_botTiles, 512, SLIDER_GFX_TAG + 2};
 
-    struct Template top_template = {SLIDER_GFX_TAG, SLIDER_PAL_TAG, &slider_oam, nullframe, &top_gfx, nullrsf, slider_ncb};
-    struct Template mid_template = {SLIDER_GFX_TAG + 1, SLIDER_PAL_TAG, &slider_oam, nullframe, &mid_gfx, nullrsf, slider_ncb};
-    struct Template bot_template = {SLIDER_GFX_TAG + 2, SLIDER_PAL_TAG, &slider_oam, nullframe, &bot_gfx, nullrsf, slider_ncb};
+    struct Template top_template = {SLIDER_GFX_TAG, SLIDER_PAL_TAG, &slider_oam, nullframe,
+                                    &top_gfx,       nullrsf,        slider_ncb};
+    struct Template mid_template = {SLIDER_GFX_TAG + 1, SLIDER_PAL_TAG, &slider_oam, nullframe,
+                                    &mid_gfx,           nullrsf,        slider_ncb};
+    struct Template bot_template = {SLIDER_GFX_TAG + 2, SLIDER_PAL_TAG, &slider_oam, nullframe,
+                                    &bot_gfx,           nullrsf,        slider_ncb};
     gpu_pal_decompress_alloc_tag_and_upload(&scroll_pal);
     gpu_tile_obj_decompress_alloc_tag_and_upload(&top_gfx);
     gpu_tile_obj_decompress_alloc_tag_and_upload(&mid_gfx);
@@ -471,16 +517,6 @@ void switch_load_pokemon_data(struct Pokemon *pokemon) {
         switch_cat_icon_load(moves[move].category, 226, 84 + (14 * i), i);
     }
 
-    for (u32 i = SWB_ABILITY; i <= SWB_NAME; ++i) {
-        rboxid_update(i, 3);
-        rboxid_tilemap_update(i);
-    }
-    /* write those again, to overwrite empty space from stats */
-    rboxid_update(SWB_ABILITY, 3);
-    rboxid_tilemap_update(SWB_ABILITY);
-    rboxid_update(SWB_ITEM, 3);
-    rboxid_tilemap_update(SWB_ITEM);
-
     /* load the type icons */
     if ((enum MoveTypes)(pokemon_base_stats[species].type[0]) != MTYPE_EGG) {
         switch_type_icon_load(pokemon_base_stats[species].type[0], 47, 25, 0);
@@ -491,6 +527,17 @@ void switch_load_pokemon_data(struct Pokemon *pokemon) {
     } else if (battle_master->switch_main.type_objid[1] != 0x3F) {
         OBJID_HIDE(battle_master->switch_main.type_objid[1]);
     }
+
+    for (u32 i = SWB_ABILITY; i <= SWB_NAME; ++i) {
+        rboxid_update(i, 3);
+        rboxid_tilemap_update(i);
+    }
+
+    /* write those again, to overwrite empty space from stats */
+    rboxid_update(SWB_ABILITY, 3);
+    rboxid_tilemap_update(SWB_ABILITY);
+    rboxid_update(SWB_ITEM, 3);
+    rboxid_tilemap_update(SWB_ITEM);
 }
 
 void switch_obj_hide_all(void) {
@@ -514,7 +561,8 @@ void switch_obj_show_all(void) {
 
 void switch_update_graphical(u8 lpos) {
     objects[battle_master->switch_main.icon_objid[lpos]].rotscale_table = switch_scale_table;
-    objects[battle_master->switch_main.icon_objid[battle_master->switch_main.position]].rotscale_table = switch_scale_table_full_effect;
+    objects[battle_master->switch_main.icon_objid[battle_master->switch_main.position]].rotscale_table =
+        switch_scale_table_full_effect;
     switch (lpos) {
     case 0:
         if (battle_master->switch_main.position == 1) {
@@ -576,17 +624,95 @@ void switch_update_graphical(u8 lpos) {
     switch_load_pokemon_data(&party_player[count]);
 }
 
+void switch_load_battle_scene(void) {
+    for (u32 i = 0; i < 10; ++i) {
+        if (battle_master->switch_main.type_objid[i] != 0x3F) {
+            battle_master->switch_main.type_objid[i] = 0x3F;
+        }
+    }
+    for (u32 i = 0; i < 3; ++i) {
+        if (battle_master->switch_main.slider_objid[i] != 0x3F) {
+            battle_master->switch_main.slider_objid[i] = 0x3F;
+        }
+    }
+    for (u32 i = 0; i < 6; ++i) {
+        if (battle_master->switch_main.icon_objid[i] != 0x3F) {
+            battle_master->switch_main.icon_objid[i] = 0x3F;
+        }
+    }
+    free(bgid_get_tilemap(1));
+    reset_boxes();
+    obj_and_aux_reset_all();
+    bgid_mod_x_offset(0, 0, 0);
+    bgid_mod_y_offset(0, 0, 0);
+    bgid_mod_x_offset(1, 0, 0);
+    bgid_mod_y_offset(1, 0, 0);
+    bgid_mod_x_offset(2, 0, 0);
+    bgid_mod_y_offset(2, 0, 0);
+    bgid_mod_x_offset(3, 0, 0);
+    bgid_mod_y_offset(3, 0, 0);
+    gpu_tile_bg_drop_all_sets(0);
+    struct BgConfig bg0_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 0,
+                                  .palette = 0,
+                                  .size = 0,
+                                  .map_base = 31,
+                                  .character_base = 3,
+                                  .bgid = 0};
+    struct BgConfig bg1_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 1,
+                                  .palette = 0,
+                                  .size = 0,
+                                  .map_base = 30,
+                                  .character_base = 2,
+                                  .bgid = 1};
+    struct BgConfig bg2_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 2,
+                                  .palette = 0,
+                                  .size = 0,
+                                  .map_base = 29,
+                                  .character_base = 1,
+                                  .bgid = 2};
+    struct BgConfig bg3_config = {.padding = 0,
+                                  .b_padding = 0,
+                                  .priority = 3,
+                                  .palette = 0,
+                                  .size = 1,
+                                  .map_base = 28,
+                                  .character_base = 0,
+                                  .bgid = 3};
+    struct BgConfig bg_config_data[4] = {bg0_config, bg1_config, bg2_config, bg3_config};
+    bg_vram_setup(0, (struct BgConfig *)&bg_config_data, 4);
+
+    // init textbox
+    rbox_init_from_templates((struct TextboxTemplate *)0x8248330);
+    remo_reset_acknowledgement_flags();
+    battlebox_mark_usable();
+    battle_master->selected_option = 0;
+}
+
+#define SW_STATE_INIT 0
+#define SW_STATE_LDGFX 1
+#define SW_STATE_FADEIN 2
+#define SW_STATE_MAINCTRL 3
+#define SW_STATE_EXIT 4
+#define SW_STATE_LOAD_GFX 5
+
 void switch_scene_main(void) {
+    u8 exit_state = 0;
     switch (super.multi_purpose_state_tracker) {
-    case 0:
+    case SW_STATE_INIT:
         if (!pal_fade_control.active) {
             /* VRAM setup */
-            rboxes_free();
+            reset_boxes();
             switch_setup();
             super.multi_purpose_state_tracker++;
         }
         break;
-    case 1: {
+    case SW_STATE_LDGFX: {
         switch_load_background();
         rbox_init_from_templates(switch_boxes);
         switch_load_pokemon_data(&party_player[0]);
@@ -596,24 +722,32 @@ void switch_scene_main(void) {
         super.multi_purpose_state_tracker++;
         break;
     }
-    case 2:
+    case SW_STATE_FADEIN:
         gpu_sync_bg_show(1);
         gpu_sync_bg_show(0);
         switch_obj_show_all();
         fade_screen(0xFFFFFFFF, 0, 16, 0, 0x0000);
         super.multi_purpose_state_tracker++;
         break;
-    case 3:
+    case SW_STATE_MAINCTRL:
         if (!pal_fade_control.active) {
             switch (super.buttons_new_remapped & (KEY_A | KEY_B | KEY_DOWN | KEY_UP)) {
             case KEY_A:
-                break;
+                exit_state = 1;
+                super.multi_purpose_state_tracker = SW_STATE_EXIT;
+                fade_screen(0xFFFFFFFF, 0, 0, 16, 0x0000);
             case KEY_B:
+                exit_state = 0;
+                super.multi_purpose_state_tracker = SW_STATE_EXIT;
+                fade_screen(0xFFFFFFFF, 0, 0, 16, 0x0000);
                 break;
             case KEY_DOWN:
                 if (battle_master->switch_main.position < 5) {
-                    battle_master->switch_main.position++;
-                    switch_update_graphical(battle_master->switch_main.position - 1);
+                    if (party_count_pokemon() > battle_master->switch_main.position + 1) {
+                        battle_master->switch_main.position++;
+                        switch_update_graphical(battle_master->switch_main.position - 1);
+                    }
+
                 } else {
                     battle_master->switch_main.position = 0;
                     switch_update_graphical(5);
@@ -624,8 +758,10 @@ void switch_scene_main(void) {
                     battle_master->switch_main.position--;
                     switch_update_graphical(battle_master->switch_main.position + 1);
                 } else {
-                    battle_master->switch_main.position = 5;
-                    switch_update_graphical(0);
+                    if (party_count_pokemon() == 6) {
+                        battle_master->switch_main.position = 5;
+                        switch_update_graphical(0);
+                    }
                 }
                 break;
             default:
@@ -633,12 +769,66 @@ void switch_scene_main(void) {
             }
         }
         break;
-    case 4:
+    case SW_STATE_EXIT:
         if (!pal_fade_control.active) {
-            fade_screen(0xFFFFFFFF, 0, 16, 0, 0x0000);
+            switch_load_battle_scene();
+            super.multi_purpose_state_tracker++;
         }
         break;
-    case 5:
-        break;
+    case SW_STATE_LOAD_GFX: {
+        /* Todo: extra method for initial loading and reloading */
+        memset((void *)(ADDR_VRAM), 0x0, 0x10000);
+        // copy image BG background
+        void *char_base = (void *)0x6000000;
+        void *map_base = (void *)0x600E000;
+        lz77UnCompVram((void *)grass_bgTiles, char_base);
+        lz77UnCompVram((void *)grass_bgMap, map_base);
+
+        // copy textbox image
+        char_base = (void *)0x600C000;
+        lz77UnCompVram((void *)bboxTiles, char_base);
+
+        // write palettes
+        gpu_pal_apply_compressed((void *)grass_bgPal, 0, 64);
+        gpu_pal_apply((void *)bboxPal, 16 * 5, 32);
+
+        u8 objid_opp = spawn_pkmn_obj_slot(0, 0x100);
+        p_bank[OPPONENT_SINGLES_BANK]->objid = objid_opp;
+        objects[objid_opp].pos1.y = 20;
+
+        u8 slot_player = GET_SLOT_FROM_PTR((u32)&party_opponent[0], (u32)p_bank[PLAYER_SINGLES_BANK]->this_pkmn, 100);
+        u8 objid_player = spawn_pkmn_backsprite_obj_slot(slot_player, 0x810);
+
+        p_bank[PLAYER_SINGLES_BANK]->objid = objid_player;
+
+        objects[objid_player].pos1.x = 64;
+        objects[objid_player].pos1.y = 94;
+
+        objects[objid_opp].pos1.x = 178;
+        objects[objid_opp].pos1.y = 54;
+
+        spawn_hpbox_opponent(HPBOX_TAG_OPP_SW, HPBOX_OPP_SW_X, HPBOX_OPP_SW_Y);
+        spawn_hpbox_player(HPBOX_TAG_PLAYER_SINGLE, HPBOX_PLAYER_SINGLE_X, HPBOX_PLAYER_SINGLE_Y);
+
+        status_graphical_update(PLAYER_SINGLES_BANK, p_bank[PLAYER_SINGLES_BANK]->b_data.status);
+        status_graphical_update(OPPONENT_SINGLES_BANK, p_bank[OPPONENT_SINGLES_BANK]->b_data.status);
+
+        // write palettes
+        gpu_pal_apply_compressed((void *)grass_bgPal, 0, 64);
+        gpu_pal_apply((void *)bboxPal, 16 * 5, 32);
+        super.multi_purpose_state_tracker++;
+    } break;
+    case 6:
+        gpu_sync_bg_show(3);
+        gpu_sync_bg_show(1);
+        gpu_sync_bg_show(0);
+        bgid_mark_for_sync(3);
+        bgid_mark_for_sync(1);
+        bgid_mark_for_sync(0);
+        fade_screen(0xFFFFFFFF, 0, 16, 0, 0x0000);
+        super.multi_purpose_state_tracker = 0;
+        extern void option_selection(void);
+        extern void init_battle(void);
+        set_callback1(init_battle);
     }
 }
