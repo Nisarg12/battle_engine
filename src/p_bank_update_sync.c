@@ -12,6 +12,7 @@ void update_pbank(u8 bank, struct update_flags* flags)
 {
     // base stats
     u16 species = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_SPECIES, NULL);
+    p_bank[bank]->b_data.weight = pokemon_get_weight(species_to_pokedex_index(species), 1) / 10;
     p_bank[bank]->b_data.species = species;
     p_bank[bank]->b_data.gender = pokemon_get_gender(p_bank[bank]->this_pkmn);
     p_bank[bank]->b_data.current_hp = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_CURRENT_HP, NULL);;
@@ -24,7 +25,6 @@ void update_pbank(u8 bank, struct update_flags* flags)
     p_bank[bank]->b_data.type[1] = pokemon_base_stats[species].type[1];
     p_bank[bank]->b_data.type[1] = (p_bank[bank]->b_data.type[1]) ? p_bank[bank]->b_data.type[1] : TYPE_NONE;
     p_bank[bank]->b_data.type[2] = TYPE_NONE;
-    p_bank[bank]->b_data.weight = 0; //To add logic of fetching weight.
 
     // pp and moves
     for (u8 i = 0; i < 4; i++) {
@@ -46,6 +46,7 @@ void update_pbank(u8 bank, struct update_flags* flags)
     p_bank[bank]->b_data.speed_iv = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_SPD_IV, NULL);
     p_bank[bank]->b_data.sp_atk_iv = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_SPATK_IV, NULL);
     p_bank[bank]->b_data.sp_def_iv = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_SPDEF_IV, NULL);
+    p_bank[bank]->b_data.will_move = true;
 
     // status ailment
     ailment_decode(bank, pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, NULL));
@@ -92,11 +93,15 @@ void update_pbank(u8 bank, struct update_flags* flags)
     }
 
     if (!flags->pass_disables) {
-        
+
     }
 
     p_bank[bank]->b_data.illusion = 0;
     p_bank[bank]->b_data.fainted = 0;
+
+    p_bank[bank]->b_data.stockpile_uses = 0;
+    p_bank[bank]->b_data.stockpile_def_boost = 0;
+    p_bank[bank]->b_data.stockpile_spdef_boost = 0;
 }
 
 
@@ -106,4 +111,70 @@ void sync_battler_struct(u8 bank)
     u8 ailment = ailment_encode(bank);
     pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_CURRENT_HP, &c_hp);
     pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, &ailment);
+    for (u8 i = 0; i < 4; i++) {
+        u8 pp = B_GET_MOVE_PP(bank, i);
+        pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_PP1 + i, &pp);
+    }
+}
+
+
+bool update_bank_hit_list(u8 bank_index)
+{
+    u16 move = CURRENT_MOVE(bank_index);
+    u8 list[4] = {BANK_MAX, BANK_MAX, BANK_MAX, BANK_MAX};
+
+    if (M_HITS_SELF(move)) {
+        // Target is user
+        list[0] = bank_index;
+    } else if (M_HITS_ALLY_OR_SELF(move)) {
+        // todo. The choice between ally and self.
+        list[0] = bank_index;
+    } else if (M_HITS_TARGET(move)) {
+        // Target is selected Target
+        list[0] = FOE_BANK(bank_index);
+    } else if (M_HITS_ALLY(move)) {
+        // hits ally
+        if (SIDE_OF(bank_index) == PLAYER_SIDE) {
+            list[0] = bank_index ? 0 : 1;
+        } else {
+            list[0] = (bank_index < 2) ? 2 : 1;
+        }
+        // in singles hitting your ally does nothing.
+        return false;
+    } else if (M_HITS_ADJ(move)) {
+        for (u8 i = 0; i < 4; i++) {
+            list[i] = (i != bank_index) ? i : BANK_MAX;
+        }
+    } else if (M_HITS_FOE_SIDE(move)) {
+        // Target is the foe side
+        if (SIDE_OF(bank_index) == PLAYER_SIDE) {
+            list[0] = 2;
+            list[1] = 3;
+        } else {
+            list[0] = 0;
+            list[1] = 1;
+        }
+    } else if (M_HITS_MY_SIDE(move)) {
+        // Target is the user side
+        if (SIDE_OF(bank_index) == PLAYER_SIDE) {
+            list[0] = 0;
+            list[1] = 1;
+        } else {
+            list[0] = 2;
+            list[1] = 3;
+        }
+    } else if (M_HITS_ALL(move)) {
+        // Target is everything
+        for (u8 i = 0; i < 4; i++) {
+            list[i] = i;
+        }
+    } else {
+        // no target
+        return false;
+    }
+    for (u8 i = 0; i < 4; i++) {
+        battle_master->bank_hit_list[i] = list[i];
+    }
+
+    return true;
 }

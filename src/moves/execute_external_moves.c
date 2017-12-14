@@ -263,7 +263,7 @@ const static u16 me_first_disallow[] = {
 
 u8 me_first_on_base_power_anon(u8 attacker, u8 src, u16 move, struct anonymous_callback* acb)
 {
-	u8 base_power = B_MOVE_POWER(attacker);
+	u16 base_power = B_MOVE_POWER(attacker);
 	if (attacker == src) {
 		acb->in_use = false;
 		B_MOVE_POWER(attacker) = NUM_MOD(base_power, 150);
@@ -321,5 +321,60 @@ u8 snatch_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 	enqueue_message(CURRENT_MOVE(user), user, STRING_SNATCH_WAITING, 0);
 	add_callback(CB_ON_TRYHIT_MOVE, 0, 0, user, (u32)(statch_tryhit_anon));
 	acb->in_use = false;
+	return true;
+}
+
+
+/* Instruct */
+extern void set_attack_bm_inplace(u16 move, u8 new_bank, u8 index);
+const static u16 instruct_disallow[] = {
+	MOVE_ASSIST, MOVE_BEAK_BLAST, MOVE_BIDE, MOVE_COPYCAT, MOVE_FOCUS_PUNCH,
+	MOVE_ICE_BALL, MOVE_INSTRUCT, MOVE_ME_FIRST, MOVE_METRONOME, MOVE_MIMIC,
+	MOVE_MIRROR_MOVE, MOVE_NATURE_POWER, MOVE_OUTRAGE, MOVE_PETAL_DANCE,
+	MOVE_ROLLOUT, MOVE_SHELL_TRAP, MOVE_SKETCH, MOVE_SLEEP_TALK, MOVE_THRASH,
+	MOVE_TRANSFORM, MOVE_NONE,
+};
+
+u8 instruct_revert_on_after_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+	if (HAS_VOLATILE(user, VOLATILE_INSTRUCT)) {
+		CLEAR_VOLATILE(user, VOLATILE_INSTRUCT);
+		CURRENT_MOVE(user) = (u16)acb->data_ptr;
+		acb->data_ptr = false;
+	}
+	return true;
+}
+
+void instruct_on_after_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+	if (user != src) return;
+	u8 target = TARGET_OF(user);
+	if (LAST_MOVE(target) == MOVE_NONE) return;
+	ADD_VOLATILE(target, VOLATILE_INSTRUCT);
+	if (!B_MOVE_BANK(user)) {
+		battle_master->first_bank = target;
+		set_attack_bm_inplace(LAST_MOVE(target), target, 0);
+	} else {
+		battle_master->second_bank = target;
+		set_attack_bm_inplace(LAST_MOVE(target), target, 1);
+	}
+	battle_master->repeat_move = true;
+	acb->in_use = false;
+	u8 id = add_callback(CB_ON_AFTER_MOVE, 0, 0, user, (u32)instruct_revert_on_after_move);
+	CB_MASTER[id].data_ptr = CURRENT_MOVE(target);
+	CURRENT_MOVE(target) = LAST_MOVE(target);
+}
+
+u8 instruct_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+	if (user != src) return true;
+	u8 last_atk = LAST_MOVE(TARGET_OF(user));
+
+	if (last_atk == MOVE_NONE) return false;
+	if (IS_RECHARGE(last_atk) || IS_CHARGE(last_atk)) return false;
+	for (u8 i = 0 ; i < (sizeof(instruct_disallow) / sizeof(u16)); i++) {
+		if (last_atk == instruct_disallow[i])
+			return false;
+	}
 	return true;
 }

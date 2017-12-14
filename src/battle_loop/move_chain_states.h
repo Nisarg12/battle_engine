@@ -35,7 +35,8 @@ enum RunSwitchStates {
 
 enum RunMoveStates {
     S_BEFORE_MOVE = 0,
-    S_CHECK_TARGET_EXISTS,
+    S_BEFORE_MOVE_RESOLUTION,
+    S_CONFIG_MOVE_EXEC,
     S_RUN_MOVE_HIT,
     S_MOVE_FAILED,
     S_RUN_FAINT,

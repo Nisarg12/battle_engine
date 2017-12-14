@@ -8,7 +8,8 @@ extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 ef
 extern enum WeatherTypes get_weather(void);
 
 // hurricane
-u8 hurricane_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+// Thunder
+u8 hurricane_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
     if ((battle_master->field_state.is_raining) || (battle_master->field_state.is_primordial_sea)) {
@@ -30,8 +31,57 @@ u8 hurricane_on_tryhit_inv(u8 user, u8 src, u16 move, struct anonymous_callback*
      return false;
 }
 
-// Thunder
-/* Literal clone of hurricane callbacks. Those are copied over in move_data.c */
+
+// blizzard
+u8 blizzard_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (user != src) return true;
+    if (battle_master->field_state.is_hail)
+        B_MOVE_ACCURACY(user) = 101;
+    return true;
+}
+
+// Morning Sun
+// Synthesis
+// Moonlight
+u8 synthesis_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (user != src) return true;
+    switch(get_weather()) {
+        case WEATHER_RAIN:
+        case WEATHER_SANDSTORM:
+        case WEATHER_HAIL:
+        case WEATHER_HARSH_RAIN:
+            B_HEAL(user) = 33;
+            break;
+        case WEATHER_SUN:
+        case WEATHER_HARSH_SUN:
+            B_HEAL(user) = 67;
+            break;
+        default:
+            B_HEAL(user) = 50;
+    };
+    return true;
+}
+
+
+// Growth
+u8 growth_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (user != src) return true;
+    if ((battle_master->field_state.is_sunny) || (battle_master->field_state.is_desolate_land)) {
+        B_USER_STAT_MOD_CHANCE(user, ATTACK_MOD) = 100;
+        B_USER_STAT_MOD_CHANCE(user, SPATTACK_MOD) = 100;
+        B_USER_STAT_MOD_AMOUNT(user, ATTACK_MOD) = 2;
+        B_USER_STAT_MOD_AMOUNT(user, SPATTACK_MOD) = 2;
+    } else {
+        B_USER_STAT_MOD_CHANCE(user, ATTACK_MOD) = 100;
+        B_USER_STAT_MOD_CHANCE(user, SPATTACK_MOD) = 100;
+        B_USER_STAT_MOD_AMOUNT(user, ATTACK_MOD) = 1;
+        B_USER_STAT_MOD_AMOUNT(user, SPATTACK_MOD) = 1;
+    }
+    return true;
+}
 
 
 // Weather ball

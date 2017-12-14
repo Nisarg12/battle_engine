@@ -66,7 +66,8 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
     s8 stat_total = *stat_stored + new_amount;
     stat_total = MIN(6, stat_total);
     stat_total = MAX(-6, stat_total);
-    switch ((ABS(stat_total - (*stat_stored)))) {
+    u8 delta = (ABS(stat_total - (*stat_stored)));
+    switch (delta) {
         case 0:
            // stat didn't change - string can't go up/down anymore
             if (new_amount > 0) {
@@ -77,7 +78,7 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
             break;
         case 1:
             // stat changed by 1 stage
-            *stat_stored += (new_amount > 0) ? 1 : -1;
+            *stat_stored += (new_amount > 0) ? delta : -delta;
             if (new_amount > 0) {
                 enqueue_message(0, bank, STRING_STAT_MOD_RISE, stat_id + REQUEST_ATK);
             } else {
@@ -86,7 +87,7 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
             break;
         case 2:
             // stat changed by 2 stages
-            *stat_stored += (new_amount > 0) ? 2 : -2;
+            *stat_stored += (new_amount > 0) ? delta : -delta;
             if (new_amount > 0) {
                 enqueue_message(0, bank, STRING_STAT_MOD_HARSH_RISE, stat_id + REQUEST_ATK);
             } else {
@@ -94,13 +95,18 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
             }
             break;
         case 3:
-            // stat changed by 3 stages
-            *stat_stored += (new_amount > 0) ? 3 : -3;
+        case 4:
+        case 5:
+        case 6:
+            // stat changed by >=3 stages
+            *stat_stored += (new_amount > 0) ? delta : -delta;
             if (new_amount > 0) {
                 enqueue_message(0, bank, STRING_STAT_MOD_ROSE_DRASTICALLY, stat_id + REQUEST_ATK);
             } else {
                 enqueue_message(0, bank, STRING_STAT_MOD_SEVERELY_FELL, stat_id + REQUEST_ATK);
             }
+            break;
+        default:
             break;
     };
 }
@@ -201,6 +207,10 @@ void set_status(u8 bank, enum Effect status)
         case EFFECT_CURE:
             // cure status
 			status_applied = true;
+            break;
+        case EFFECT_INFACTUATION:
+        if (p_bank[bank]->b_data.pseudo_ailment != AILMENT_INFACTUATE)
+            status_applied = true;
             break;
         default:
             return;

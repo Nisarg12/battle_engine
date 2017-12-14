@@ -51,11 +51,6 @@ u8 magnet_rise_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* a
 
 
 /* Telekinesis */
-#define SPECIES_ALOLAN_DIGLETT 0x999
-#define SPECIES_ALOLAN_DUGTRIO 0x999
-#define SPECIES_SANDYGAST 0x999
-#define SPECIES_PALOSSAND 0x999
-#define SPECIES_MEGA_GENGAR 0x999
 
 const static u16 telekinesis_ban_list[] = {
     SPECIES_DIGLETT, SPECIES_DUGTRIO, SPECIES_ALOLAN_DIGLETT, SPECIES_ALOLAN_DUGTRIO,

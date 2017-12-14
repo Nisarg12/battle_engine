@@ -36,7 +36,7 @@ void run_decision(void)
         case S_RUN_SWITCH_ALTERNATE_BANK:
         {
             // once first bank's run_switch and run_after_switch have exec'd, run second bank
-            if (bank_index == battle_master->second_bank) {
+            if (battle_master->execution_index) {
                 // if second bank run, switch back to first bank and go to next phase
                 battle_master->execution_index = 0;
                 super.multi_purpose_state_tracker = S_RUN_MOVE;
@@ -56,7 +56,7 @@ void run_decision(void)
             break;
         case S_RUN_MOVE_ALTERNATE_BANK:
             // run move for second bank after first bank is run.
-            if (bank_index == battle_master->second_bank) {
+            if (battle_master->execution_index) {
                 battle_master->execution_index = 0;
                 super.multi_purpose_state_tracker = S_UPDATE_TURN_CALLBACKS;
             } else {
@@ -105,5 +105,6 @@ void battle_loop()
     pick_wild_singles_ai_attack();
 	// A usable move was picked
 	battle_set_order();
+    battle_master->execution_index = 0;
 	set_callback1(run_decision);
 }

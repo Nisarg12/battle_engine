@@ -98,6 +98,9 @@ void buffer_write_status_name(pchar* buffer, u8 status_id)
         case AILMENT_CONFUSION:
             pstrcpy(buffer, (pchar*)&str_status_confuse);
             break;
+        case AILMENT_INFACTUATE:
+            pstrcpy(buffer, (pchar*)&str_status_infactuation);
+            break;
     };
 }
 

@@ -104,10 +104,11 @@ void charge_on_base_power_move(u8 user, u8 src, u16 move, struct anonymous_callb
 
 u8 charge_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
-    u8 id = add_callback(CB_ON_RESIDUAL, 0, 0, src, (u32)charge_on_base_power_move);
+    u8 id = add_callback(CB_ON_BASE_POWER_MOVE, 0, 0, src, (u32)charge_on_base_power_move);
     CB_MASTER[id].delay_before_effect = 1;
     return true;
 }
+
 
 // Doom Desire
 u16 doom_desire_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb)

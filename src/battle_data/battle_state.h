@@ -19,6 +19,7 @@ enum Effect {
     EFFECT_BAD_POISON,
     EFFECT_CONFUSION,
     EFFECT_CURE,
+    EFFECT_INFACTUATION,
 };
 
 enum WeatherTypes {
@@ -80,7 +81,7 @@ struct move_used {
     u16 move_id;
     s8 priority;
     u8 stab;
-    u8 power;
+    u16 power; //prevent clamp up for moves over effectively 255 bp
     u8 category;
     u8 type[2];
     u8 flinch;
@@ -148,8 +149,12 @@ struct battle_main {
     u8 first_bank;
     u8 second_bank;
     u8 execution_index;
+    u8 bank_hit_list[4];
     struct move_used b_moves[2];
-
+    u8 repeat_move : 1;
+    u8 move_completed : 1;
+    SuperCallback c1_after_faint_check;
+    u8 c1_prestate;
     struct switch_menu switch_main;
 
     /* Battle details */

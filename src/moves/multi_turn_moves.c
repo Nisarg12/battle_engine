@@ -9,7 +9,7 @@ extern void run_decision(void);
 extern u16 rand_range(u16 min, u16 max);
 extern void set_status(u8 bank, enum Effect status);
 
-
+/* Thrash, Outrage, Petal Dance */
 u8 thrash_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
@@ -45,6 +45,7 @@ void thrash_on_after_move(u8 user, u8 src, u16 move, struct anonymous_callback* 
     }
     return;
 }
+
 
 /* shared callbacks with Ice ball */
 u8 rollout_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)

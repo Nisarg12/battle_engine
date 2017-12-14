@@ -210,6 +210,7 @@ void status_graphical_update(u8 bank, enum Effect status)
     switch(status)
     {
         case EFFECT_NONE:
+        case EFFECT_CURE:
             if(p_bank[bank]->objid_hpbox[3] < 0x3F) {
                 obj_delete_and_free(&objects[p_bank[bank]->objid_hpbox[3]]);
                 p_bank[bank]->objid_hpbox[3] = 0x3F;

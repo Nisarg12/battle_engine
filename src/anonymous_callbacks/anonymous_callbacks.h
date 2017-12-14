@@ -11,6 +11,7 @@
 #define CB_MASTER battle_master->anon_cb_master
 #define CB_EXEC_ORDER battle_master->cb_execution_order
 #define CB_EXEC_INDEX battle_master->current_cb_index
+#define CB_PERMA 126
 
 #define CB_ON_BEFORE_TURN 1
 #define CB_ON_BEFORE_SWITCH 2
@@ -31,7 +32,7 @@
 #define CB_ON_STATUS 17
 #define CB_ON_BEFORE_STAT_MOD 18
 #define CB_ON_DISABLE_MOVE 19 // run before  before turn. Resets banks and prompts move selection on fail
-
+#define CB_ON_FAINT_CHECK 20
 
 
 
@@ -48,23 +49,36 @@ struct anonymous_callback {
 
 typedef u16 (*AnonymousCallback)(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 
+// Generic callback functions
 extern u8 add_callback(u8 CB_id, s8 priority, u8 dur, u8 src, u32 func);
+extern bool callback_exists(u32 func);
+extern void delete_callback(u32 func);
+
+// Building and running callbacks
 extern void build_execution_order(u8 CB_id);
 extern u16 pop_callback(u8 attacker, u16 move);
-extern void update_callbacks(void);
-extern u8 id_by_func(u32 func);
-extern void set_data_next_acb(u32 data);
-extern void delete_callback(u32 func);
 extern u16 run_callback(u8 attacker, u16 move);
-extern bool callback_exists(u32 func);
+
+// Fetch callbacks and generic
+extern u8 id_by_func(u32 func);
 extern u8 id_by_acb(struct anonymous_callback* acb);
-extern u8 callback_exists_side(u32 func, u8 bank);
+extern void set_data_next_acb(u32 data);
+
+// Callback operations on source + func level
 extern void delete_callback_src(u32 func, u8 src);
 extern bool has_callback_src(u32 func, u8 src);
-extern void delete_callback_side(u32 func, u8 side);
+extern u8 get_callback_src(u32 func, u8 src);
 
-// callback stack restoration related
+// callback operations on side + func level
+extern void delete_callback_side(u32 func, u8 side);
+extern u8 callback_exists_side(u32 func, u8 bank);
+
+// callback stack restore and backup related
 extern void restore_callbacks(u32* data_ptr);
 extern u32* push_callbacks();
+
+// Update Callback counters - Mark expired callbacks
+extern void update_callbacks(void);
+
 
 #endif /* ANONYMOUS_CALLBACKS_H_ */

@@ -19,11 +19,17 @@ extern void dprintf(const char * str, ...);
 extern void c1_residual_status_effects(void);
 extern void hpbar_apply_dmg(u8 task_id);
 extern bool is_grounded(u8 bank);
+extern void set_attack_bm_inplace(u16 move_id, u8 new_bank, u8 index);
+extern bool update_bank_hit_list(u8 bank_index);
+extern u8 get_move_index(u16 move_id, u8 bank);
+
 
 enum BeforeMoveStatus {
     CANT_USE_MOVE = 0,
     USE_MOVE_NORMAL,
     TARGET_MOVE_IMMUNITY,
+    SILENT_FAIL,
+    SILENT_CONTINUE,
 };
 
 
@@ -84,8 +90,12 @@ void run_move()
                 case CANT_USE_MOVE:
                 case TARGET_MOVE_IMMUNITY:
                     enqueue_message(0, bank_index, STRING_FAILED, 0);
+                case SILENT_FAIL:
+                    battle_master->move_completed = true;
                     super.multi_purpose_state_tracker = S_MOVE_FAILED;
                     return;
+                case SILENT_CONTINUE:
+                    break;
             };
 
 			/* Before Move effects which cause turn ending */
@@ -104,38 +114,82 @@ void run_move()
             } else {
 				// display "Pokemon used move!"
                 B_MOVE_FAILED(bank_index) = false;
-				enqueue_message(CURRENT_MOVE(bank_index), bank_index, STRING_ATTACK_USED, 0);
-				super.multi_purpose_state_tracker = S_CHECK_TARGET_EXISTS;
+                if (result != SILENT_CONTINUE)
+		            enqueue_message(CURRENT_MOVE(bank_index), bank_index, STRING_ATTACK_USED, 0);
+				super.multi_purpose_state_tracker = S_CONFIG_MOVE_EXEC;
 			}
             break;
         }
-        case S_CHECK_TARGET_EXISTS:
-            // check target exists
-            if (!target_exists(bank_index)) {
+        case S_CONFIG_MOVE_EXEC:
+        {
+            /* Initialize target banks for moves */
+            if (!update_bank_hit_list(bank_index)) {
+                // Move didn't specify a target
                 enqueue_message(0, bank_index, STRING_FAILED, 0);
                 super.multi_purpose_state_tracker = S_MOVE_FAILED;
-            } else {
-                super.multi_purpose_state_tracker++;
+                return;
             }
-            break;
-        case S_RUN_MOVE_HIT:
             // reduce PP
-            if (!(HAS_VOLATILE(bank_index, VOLATILE_MULTI_TURN))) {
+            if ((!HAS_VOLATILE(bank_index, VOLATILE_MULTI_TURN)) && (!B_REDUCE_PP(bank_index))) {
                 u8 pp_index = p_bank[bank_index]->b_data.pp_index;
                 if (pp_index < 4) {
                     p_bank[bank_index]->b_data.move_pp[pp_index]--;
                 }
             }
-            set_callback1(move_hit); // move hit will advance the state when complete
-            super.multi_purpose_state_tracker = S_MOVE_TRYHIT;
+            battle_master->move_completed = false;
+            super.multi_purpose_state_tracker = S_RUN_MOVE_HIT;
             break;
+        }
+        case S_RUN_MOVE_HIT:
+        {
+            bool will_move = false;
+            for (u8 i = 0; i < sizeof(battle_master->bank_hit_list); i++) {
+                if (battle_master->bank_hit_list[i] < BANK_MAX) {
+                    if (ACTIVE_BANK(battle_master->bank_hit_list[i])) {
+                        TARGET_OF(bank_index) = battle_master->bank_hit_list[i];
+                        battle_master->bank_hit_list[i] = BANK_MAX;
+                        will_move = true;
+                        break;
+                    } else {
+                        battle_master->bank_hit_list[i] = BANK_MAX;
+                    }
+                }
+            }
+            if (will_move) {
+                // reset battle master move structure for this move
+                set_attack_bm_inplace(CURRENT_MOVE(bank_index), bank_index, B_MOVE_BANK(bank_index));
+                B_MOVE_DMG(bank_index) = 0;
+                B_MOVE_EFFECTIVENESS(bank_index) = 0;
+                if (!on_modify_move(bank_index, TARGET_OF(bank_index), CURRENT_MOVE(bank_index))) {
+                    B_MOVE_FAILED(bank_index) = true;
+                    enqueue_message(0, bank_index, STRING_FAILED, 0);
+                    battle_master->move_completed = true;
+                    super.multi_purpose_state_tracker = S_AFTER_MOVE;
+                    set_callback1(move_hit);
+                    return;
+                }
+                set_callback1(move_hit); // move hit will advance the state when complete
+                super.multi_purpose_state_tracker = S_MOVE_TRYHIT;
+            } else {
+                battle_master->move_completed = true;
+                super.multi_purpose_state_tracker = S_AFTER_MOVE;
+                set_callback1(move_hit);
+            }
+            break;
+        }
         case S_MOVE_FAILED:
         {
             if (B_MOVE_FAILED(bank_index)) {
                 run_move_failed_cbs(bank_index, TARGET_OF(bank_index), CURRENT_MOVE(bank_index));
             }
-            battle_master->field_state.last_used_move = CURRENT_MOVE(bank_index);
-            super.multi_purpose_state_tracker = S_RUN_FAINT;
+            if (battle_master->move_completed) {
+                battle_master->field_state.last_used_move = CURRENT_MOVE(bank_index);
+                super.multi_purpose_state_tracker = S_RUN_FAINT;
+                battle_master->c1_after_faint_check = run_move;
+                battle_master->c1_prestate = S_RESIDUAL_MOVES;
+            } else {
+                super.multi_purpose_state_tracker = S_RUN_MOVE_HIT;
+            }
             break;
         }
         case S_RUN_FAINT:
@@ -145,7 +199,16 @@ void run_move()
             break;
         case S_RESIDUAL_MOVES:
         {
+            if (battle_master->repeat_move) {
+                super.multi_purpose_state_tracker = S_BEFORE_MOVE;
+                battle_master->repeat_move = false;
+                set_callback1(run_move);
+                return;
+            }
             if (bank_index != battle_master->first_bank) {
+                for (u8 i = 0; i < 2; i++) {
+                    battle_master->b_moves[i].flinch = 0;
+                }
                 extern void c1_residual_callbacks(void);
                 set_callback1(c1_residual_callbacks);
                 super.multi_purpose_state_tracker = 0;
@@ -156,24 +219,19 @@ void run_move()
         }
         case S_WAIT_HPUPDATE_RUN_MOVE:
         {
-          /* Passive residual effects from engine structs */
-          if (is_grounded(bank_index)) {
-              B_IS_GROUNDED(bank_index) = true;
-          }
-          LAST_MOVE(bank_index) = CURRENT_MOVE(bank_index);
-          // update moves used history
-          for (u8 i = 0; i < 4; i++) {
-          	if (p_bank[bank_index]->b_data.moves_used[i] == LAST_MOVE(bank_index))
-          		break;
-          	if (p_bank[bank_index]->b_data.moves_used[i] == MOVE_NONE) {
-          		p_bank[bank_index]->b_data.moves_used[i] = LAST_MOVE(bank_index);
-          		break;
-          	}
-          }
-
-          super.multi_purpose_state_tracker = S_RUN_MOVE_ALTERNATE_BANK;
-          set_callback1(run_decision);
-          break;
+            /* Passive residual effects from engine structs */
+            if (is_grounded(bank_index)) {
+                B_IS_GROUNDED(bank_index) = true;
+            }
+            LAST_MOVE(bank_index) = CURRENT_MOVE(bank_index);
+            // update moves used history
+            p_bank[bank_index]->b_data.will_move = false;
+            u16 last_move = LAST_MOVE(bank_index);
+            u8 slot = get_move_index(last_move, bank_index);
+            p_bank[bank_index]->b_data.moves_used[slot] = last_move;
+            super.multi_purpose_state_tracker = S_RUN_MOVE_ALTERNATE_BANK;
+            set_callback1(run_decision);
+            break;
         }
     };
 }
@@ -198,29 +256,39 @@ void c1_residual_callbacks()
         }
         case 1:
         {
-            if (battle_master->executing) {
-                battle_master->bank_state  = FOE_BANK(battle_master->bank_state);
-                run_callback(battle_master->bank_state , CURRENT_MOVE(battle_master->bank_state ));
-                super.multi_purpose_state_tracker++;
-            } else {
-                super.multi_purpose_state_tracker = 3;
-            }
+            super.multi_purpose_state_tracker = S_RUN_FAINT;
+            battle_master->c1_after_faint_check = c1_residual_callbacks;
+            battle_master->c1_prestate = 2;
+            set_callback1(run_move);
             break;
         }
         case 2:
         {
             if (battle_master->executing) {
                 battle_master->bank_state  = FOE_BANK(battle_master->bank_state);
-                pop_callback(battle_master->bank_state , CURRENT_MOVE(battle_master->bank_state ));
-                super.multi_purpose_state_tracker = 1;
-            } else {
+                run_callback(battle_master->bank_state , CURRENT_MOVE(battle_master->bank_state));
                 super.multi_purpose_state_tracker = 3;
+            } else {
+                super.multi_purpose_state_tracker = 4;
             }
             break;
         }
         case 3:
+        {
+            if (battle_master->executing) {
+                battle_master->bank_state  = FOE_BANK(battle_master->bank_state);
+                pop_callback(battle_master->bank_state , CURRENT_MOVE(battle_master->bank_state ));
+                super.multi_purpose_state_tracker = 1;
+            } else {
+                super.multi_purpose_state_tracker = 4;
+            }
+            break;
+        }
+        default:
+            super.multi_purpose_state_tracker = S_RUN_FAINT;
+            battle_master->c1_after_faint_check = run_move;
+            battle_master->c1_prestate = S_WAIT_HPUPDATE_RUN_MOVE;
             set_callback1(run_move);
-            super.multi_purpose_state_tracker = S_WAIT_HPUPDATE_RUN_MOVE;
             break;
         };
 }

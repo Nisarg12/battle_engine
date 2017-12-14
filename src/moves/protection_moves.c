@@ -154,8 +154,8 @@ u8 mat_block_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb
 /* Wide guard */
 u8 wide_guard_on_tryhit_anon(u8 user, u8 source, u16 move, struct anonymous_callback* acb)
 {
-    if (TARGET_OF(user) != source) return true;
-    if (IS_PROTECTABLE(move) && M_HITS_SIDE(move) && M_HITS_TARGET(move)) {
+    if (SIDE_OF(TARGET_OF(user)) != SIDE_OF(source)) return true;
+    if (IS_PROTECTABLE(move) && M_HITS_FOE_SIDE(move)) {
         enqueue_message(MOVE_WIDE_GUARD, TARGET_OF(user), STRING_PROTECTED_MON, 0);
         return 3; // fail the move silently
     }
@@ -172,6 +172,26 @@ u8 wide_guard_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* ac
     return true;
 }
 
+/* Quick Guard */
+u8 quick_guard_on_tryhit_anon(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (SIDE_OF(user) == SIDE_OF(src)) return true;
+    if ((B_MOVE_PRIORITY(user) > 0) && (SIDE_OF(TARGET_OF(user)) == SIDE_OF(src))) {
+        enqueue_message(MOVE_QUICK_GUARD, TARGET_OF(user), STRING_PROTECTED_MON, 0);
+        return 3; // fail the move silently
+    }
+    return true;
+}
+
+u8 quick_guard_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    // msg: X protected itself
+    // queue an anon func to read and interrupt
+    if (user != src) return true;
+    enqueue_message(MOVE_QUICK_GUARD, src, STRING_PROTECTED_TEAM, 0);
+    add_callback(CB_ON_TRYHIT_MOVE, 3, 0, user, (u32)quick_guard_on_tryhit_anon);
+    return true;
+}
 
 /* Crafty shield */
 u8 crafty_shield_on_tryhit_anon(u8 user, u8 source, u16 move, struct anonymous_callback* acb)

@@ -11,6 +11,16 @@ extern bool has_volatile(u8 bank, enum Volatiles v);
 extern void clear_volatile(u8 bank, enum Volatiles v);
 extern void add_volatile(u8 bank, enum Volatiles v);
 
+/* To be removed when species expansion hits */
+#define SPECIES_ASH_GRENINJA 0
+#define SPECIES_ALOLAN_DIGLETT 0x999
+#define SPECIES_ALOLAN_DUGTRIO 0x999
+#define SPECIES_SANDYGAST 0x999
+#define SPECIES_PALOSSAND 0x999
+#define SPECIES_MEGA_GENGAR 0x999
+#define SPECIES_ARCEUS 1000
+#define SPECIES_SILVALLY 1001
+
 /*
  * Names of stats as IDs in stage_modify_stat
  */
@@ -46,6 +56,7 @@ extern void add_volatile(u8 bank, enum Volatiles v);
 #define B_SPDEFENSE_BUFF(bank) (p_bank[bank]->b_data.sp_def)
 #define B_ACCURACY_BUFF(bank)  (p_bank[bank]->b_data.accuracy)
 #define B_EVASION_BUFF(bank) (p_bank[bank]->b_data.evasion)
+#define B_CRIT_BUFF(bank) (p_bank[bank]->b_data.crit_mod)
 
 #define B_WEIGHT(bank) (p_bank[bank]->b_data.weight)
 
@@ -72,6 +83,7 @@ extern void add_volatile(u8 bank, enum Volatiles v);
  * P_bank b_data set and fetch macros
  *
  */
+#define B_SPECIES(bank) (p_bank[bank]->b_data.species)
 #define CURRENT_MOVE(bank) (p_bank[bank]->b_data.current_move)
 #define LAST_MOVE(bank) (p_bank[bank]->b_data.last_move)
 #define BANK_ABILITY(bank) (p_bank[bank]->b_data.ability)
@@ -100,8 +112,9 @@ extern void add_volatile(u8 bank, enum Volatiles v);
 #define B_MOVE_IGNORE_EVASION(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].ignore_target_evasion)
 #define B_MOVE_MULTI(bank) ((battle_master->b_moves[B_MOVE_BANK(bank)].hit_times > 1) || (battle_master->b_moves[B_MOVE_BANK(bank)].hit_counter > 1))
 #define PROTECTION_TURNS(bank) (p_bank[bank]->b_data.protect_used_turns)
-
-
+#define B_GENDER(bank) (p_bank[bank]->b_data.gender)
+#define B_REDUCE_PP(bank) (p_bank[bank]->b_data.reduce_pp)
+#define B_IS_TRAPPED(bank) (p_bank[bank]->b_data.is_trapped)
 #define B_PKMN_TYPE(bank, index) (p_bank[bank]->b_data.type[index])
 #define B_CURRENT_HP(bank) (p_bank[bank]->b_data.current_hp)
 #define B_LEVEL(bank) (p_bank[bank]->b_data.level)
@@ -117,7 +130,7 @@ extern void add_volatile(u8 bank, enum Volatiles v);
 #define B_GET_ITEM(bank) (p_bank[bank]->b_data.item)
 #define B_MOVE_FAILED(bank) (p_bank[bank]->b_data.move_failed)
 #define B_LAST_MOVE_FAILED(bank) (p_bank[bank]->b_data.last_move_failed)
-
+#define B_IS_FAINTED(bank) (p_bank[bank]->b_data.fainted)
 #define B_GET_MOVE(bank, id) (p_bank[bank]->b_data.moves[id])
 #define B_GET_MOVE_PP(bank, id) (p_bank[bank]->b_data.move_pp[id])
 
@@ -142,9 +155,13 @@ extern void add_volatile(u8 bank, enum Volatiles v);
 /*
  * General Pbank macros
  */
+#define PLAYER_SIDE 0
+#define OPPONENT_SIDE 1
 #define FOE_BANK(bank) (bank ? 0 : 2)
 #define SIDE_OF(bank) ((bank > 1) ? 1 : 0)
-#define OPPONENT_SIDE(bank) ((!(get_side(bank))) * 2)
+#define ACTIVE_BANK(bank) (p_bank[bank]->b_data.is_active_bank)
+
+
 
 #define MOVE_EFFECTIVENESS(target_type, dmg_type) (effectiveness_chart[((target_type * 19) + (dmg_type))])
 

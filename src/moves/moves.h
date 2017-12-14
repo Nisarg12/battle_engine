@@ -53,50 +53,7 @@ struct move_procs {
 
 #include "../battle_data/battle_state.h"
 
-/*
- * Field data fetch macros
- *
- */
-#define MOVE_PRIORITY(move) moves[move].priority
-#define MOVE_POWER(move) moves[move].base_power
-#define MOVE_CATEGORY(move) moves[move].category
-#define MOVE_ACCURACY(move) moves[move].accuracy
-#define MOVE_CRIT(move) moves[move].crit_ratio
-#define M_FLINCH(move) moves[move].flinch_chance
-#define MAKES_CONTACT(move, bank) (((moves[move].m_flags) & (1 << 3)) & (!battle_master->b_moves[(bank == battle_master->first_bank) ? 0 : 1].remove_contact))
-#define MOVE_TYPE(move) moves[move].type
-#define IS_MOVE_STATUS(move) (moves[move].category == MOVE_STATUS)
-#define IS_MOVE_PHYSICAL(move) (moves[move].category == MOVE_PHYSICAL)
-#define IS_MOVE_SPECIAL(move) (moves[move].category == MOVE_SPECIAL)
-#define IS_DEFROST(move) ((moves[move].m_flags) & (1 << 4))
-#define IS_GRAVITY(move) ((moves[move].m_flags) & (1 << 5))
-#define IS_HEAL(move) ((moves[move].m_flags) & (1 << 6))
-#define IS_PROTECTABLE(move) ((moves[move].m_flags) & (1 << 9))
-#define IS_REFLECTABLE(move) ((moves[move].m_flags) & (1 << 12))
-#define IS_SNATCHABLE(move) ((moves[move].m_flags) & (1 << 13))
-#define IS_CHARGE(move) ((moves[move].m_flags) & (1 << 1))
-#define IS_RECHARGE(move) ((moves[move].m_flags) & (1 << 2))
-#define IS_DANCE(move) ((moves[move].m_flags) & (1 << 21))
-#define IS_TRIAGE(move) ((moves[move].m_flags) & (1 << 20))
-#define IS_SOUND_BASE(move) ((moves[move].m_flags) & (1 << 14))
-#define IS_PULSE(move) ((moves[move].m_flags) & (1 << 22))
-#define IS_STRONG_JAW(move) ((moves[move].m_flags) & (1 << 15))
-#define IS_BULLET(move) ((moves[move].m_flags) & (1 << 16))
-#define IS_SEMI_INVUL(move) ((moves[move].m_flags) & (1 << 23))
-#define IS_OHKO(move) ((moves[move].m_flags) & (1 << 24))
-#define CAT_OVERRIDE(move) ((moves[move].m_flags) & (1 << 25))
-#define STEAL_OFFENSIVE(move) ((moves[move].m_flags) & (1 << 26))
-#define STEAL_BOOSTS(move) ((moves[move].m_flags) & (1 << 27))
-#define IS_MIRRORABLE(move) ((moves[move].m_flags) & (1 << 7))
-#define M_HITS_SIDE(move) ((moves[move].m_flags) & (1 << 28))
-#define M_HITS_TARGET(move) ((moves[move].m_flags) & (1 << 18))
-
-
-#define DEF_CATEGORY(move) ((CAT_OVERRIDE(move)) ? ((IS_MOVE_PHYSICAL(move) ? MOVE_SPECIAL : MOVE_PHYSICAL)) : MOVE_CATEGORY(move))
-#define MOVE_SECONDARY_STATUS_CHANCE(move, bank) moves[move].procs->secondary_status_chance[SIDE_OF(bank)]
-#define MOVE_SECONDARY_STATUS(move, bank) moves[move].procs->secondary_status[SIDE_OF(bank)]
-
-
+/* Move flags list */
 #define FLAG_CHARGE (1 << 1)
 #define FLAG_RECHARGE (1 << 2)
 #define FLAG_CONTACT (1 << 3)
@@ -116,16 +73,68 @@ struct move_procs {
 #define FLAG_ONSELF (1 << 17)
 #define FLAG_TARGET (1 << 18)
 #define FLAG_HITS_ALL (1 << 19)
-#define FLAG_TRIAGE (1 << 20)
-#define FLAG_DANCE (1 << 21)
-#define FLAG_PULSE (1 << 22)
-#define FLAG_SEMI_INVUL (1 << 23)
-#define FLAG_OHKO (1 << 24)
-#define FLAG_CATEGORY_OVERRIDE (1 << 25)
-#define FLAG_STEAL_OFFENSIVE (1 << 26)
-#define FLAG_STEAL_BOOSTS (1 << 27)
-#define FLAG_HITS_SIDE (1 << 28)
-#define FLAGS_UNUSED (1 << 29)
+#define FLAG_HITS_MY_SIDE (1 << 20)
+#define FLAG_HITS_FOE_SIDE (1 << 21)
+#define FLAG_HITS_ALLY (1 << 22)
+#define FLAG_HITS_ADJACENT (1 << 23)
+#define FLAG_HITS_ALLY_OR_SELF (1 << 24)
+#define FLAG_TRIAGE (1 << 25)
+#define FLAG_DANCE (1 << 26)
+#define FLAG_PULSE (1 << 27)
+#define FLAG_OHKO (1 << 28)
+#define FLAG_CATEGORY_OVERRIDE (1 << 29)
+#define FLAG_STEAL_OFFENSIVE (1 << 30)
+#define FLAG_STEAL_BOOSTS (1 << 31)
+#define FLAGS_UNUSED (1 << 32)
+
+/*
+ * Field data fetch macros
+ */
+#define MOVE_PRIORITY(move) moves[move].priority
+#define MOVE_POWER(move) moves[move].base_power
+#define MOVE_CATEGORY(move) moves[move].category
+#define MOVE_ACCURACY(move) moves[move].accuracy
+#define MOVE_CRIT(move) moves[move].crit_ratio
+#define M_FLINCH(move) moves[move].flinch_chance
+#define MOVE_TYPE(move) moves[move].type
+#define IS_MOVE_STATUS(move) (moves[move].category == MOVE_STATUS)
+#define IS_MOVE_PHYSICAL(move) (moves[move].category == MOVE_PHYSICAL)
+#define IS_MOVE_SPECIAL(move) (moves[move].category == MOVE_SPECIAL)
+#define IS_CHARGE(move) ((moves[move].m_flags) & FLAG_CHARGE)
+#define IS_CONTACT(move) ((moves[move].m_flags) & FLAG_CONTACT)
+#define IS_RECHARGE(move) ((moves[move].m_flags) & FLAG_RECHARGE)
+#define IS_DEFROST(move) ((moves[move].m_flags) & FLAG_DEFROST)
+#define IS_GRAVITY(move) ((moves[move].m_flags) & FLAG_GRAVITY)
+#define IS_HEAL(move) ((moves[move].m_flags) & FLAG_HEAL)
+#define IS_MIRRORABLE(move) ((moves[move].m_flags) & FLAG_MIRROR)
+#define IS_PROTECTABLE(move) ((moves[move].m_flags) & FLAG_PROTECT)
+#define IS_REFLECTABLE(move) ((moves[move].m_flags) & FLAG_REFLECTABLE)
+#define IS_SNATCHABLE(move) ((moves[move].m_flags) & FLAG_SNATCH)
+#define IS_DANCE(move) ((moves[move].m_flags) & FLAG_DANCE)
+#define IS_TRIAGE(move) ((moves[move].m_flags) & FLAG_TRIAGE)
+#define IS_SOUND_BASE(move) ((moves[move].m_flags) & FLAG_SOUND)
+#define IS_PULSE(move) ((moves[move].m_flags) & FLAG_PULSE)
+#define IS_STRONG_JAW(move) ((moves[move].m_flags) & FLAG_BITE)
+#define IS_BULLET(move) ((moves[move].m_flags) & FLAG_BULLET)
+#define IS_SEMI_INVUL(move) ((moves[move].m_flags) & FLAG_SEMI_INVUL)
+#define IS_OHKO(move) ((moves[move].m_flags) & FLAG_OHKO)
+#define CAT_OVERRIDE(move) ((moves[move].m_flags) & FLAG_CATEGORY_OVERRIDE)
+#define STEAL_OFFENSIVE(move) ((moves[move].m_flags) & FLAG_STEAL_OFFENSIVE)
+#define STEAL_BOOSTS(move) ((moves[move].m_flags) & FLAG_STEAL_BOOSTS)
+
+#define M_HITS_FOE_SIDE(move) ((moves[move].m_flags) & FLAG_HITS_FOE_SIDE)
+#define M_HITS_MY_SIDE(move) ((moves[move].m_flags) & FLAG_HITS_MY_SIDE)
+#define M_HITS_TARGET(move) ((moves[move].m_flags) & FLAG_TARGET)
+#define M_HITS_SELF(move) ((moves[move].m_flags) & FLAG_ONSELF)
+#define M_HITS_ALLY(move) ((moves[move].m_flags) & FLAG_HITS_ALLY)
+#define M_HITS_ALL(move) ((moves[move].m_flags) & FLAG_HITS_ALL)
+#define M_HITS_ADJ(move) ((moves[move].m_flags) & FLAG_HITS_ADJACENT)
+#define M_HITS_ALLY_OR_SELF(move) ((moves[move].m_flags) & FLAG_HITS_ALLY_OR_SELF)
+
+#define MAKES_CONTACT(move, bank) (IS_CONTACT(move) & (!battle_master->b_moves[(bank == battle_master->first_bank) ? 0 : 1].remove_contact))
+#define DEF_CATEGORY(move) ((CAT_OVERRIDE(move)) ? ((IS_MOVE_PHYSICAL(move) ? MOVE_SPECIAL : MOVE_PHYSICAL)) : MOVE_CATEGORY(move))
+#define MOVE_SECONDARY_STATUS_CHANCE(move, bank) moves[move].procs->secondary_status_chance[SIDE_OF(bank)]
+#define MOVE_SECONDARY_STATUS(move, bank) moves[move].procs->secondary_status[SIDE_OF(bank)]
 
 
 enum MoveTypes {

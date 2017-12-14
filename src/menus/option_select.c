@@ -88,6 +88,8 @@ void option_selection()
         case 5:
         {
             // RUN selected from fight menu
+            extern void free_unused_objs(void);
+            free_unused_objs();
             p_bank[PLAYER_SINGLES_BANK]->b_data.is_running = true;
             super.multi_purpose_state_tracker = 8;
         }

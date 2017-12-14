@@ -162,7 +162,7 @@ u8 laser_focus_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* a
 // They all share this callback.
 u8 chip_away_on_before_move(u8 user, u8 src, u16 stat_id, struct anonymous_callback* acb)
 {
-    if (user != src) return true;;
+    if (user != src) return true;
     B_MOVE_IGNORE_DEF(user) = true;
     B_MOVE_IGNORE_EVASION(user) = true;
     return true;

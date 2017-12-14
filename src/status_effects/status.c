@@ -108,6 +108,7 @@ void burn_on_inflict(u8 bank)
 }
 
 
+
 /* Freeze Related */
 u8 freeze_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
@@ -131,7 +132,7 @@ void freeze_on_inflict(u8 bank)
     p_bank[bank]->b_data.status_turns = 0;
 	pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, &ailment);
     enqueue_message(0, bank, STRING_AILMENT_APPLIED, AILMENT_FREEZE);
-	add_callback(CB_ON_BEFORE_MOVE, 3, 0xFF, bank, (u32)freeze_on_before_move);
+	add_callback(CB_ON_BEFORE_MOVE, 3, CB_PERMA, bank, (u32)freeze_on_before_move);
 }
 
 
@@ -166,8 +167,8 @@ void paralyze_on_inflict(u8 bank)
     p_bank[bank]->b_data.status_turns = 0;
 	pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, &ailment);
     enqueue_message(0, bank, STRING_AILMENT_APPLIED, AILMENT_PARALYZE);
-	add_callback(CB_ON_STAT_MOD, 0, 0xFF, NULL, (u32)paralyze_on_mod_stat);
-	add_callback(CB_ON_BEFORE_MOVE, 3, 0xFF, bank, (u32)paralyze_on_before_move);
+	add_callback(CB_ON_STAT_MOD, 0, CB_PERMA, NULL, (u32)paralyze_on_mod_stat);
+	add_callback(CB_ON_BEFORE_MOVE, 3, CB_PERMA, bank, (u32)paralyze_on_before_move);
 }
 
 
@@ -192,7 +193,29 @@ void toxic_on_inflict(u8 bank)
     p_bank[bank]->b_data.status_turns = 0;
 	pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, &ailment);
     enqueue_message(0, bank, STRING_AILMENT_APPLIED, AILMENT_BAD_POISON);
-	add_callback(CB_ON_RESIDUAL, 0, 0xFF, bank, (u32)toxic_on_residual);
+	add_callback(CB_ON_RESIDUAL, 0, CB_PERMA, bank, (u32)toxic_on_residual);
+}
+
+/* Infactuation related */
+// 50% chance to fail to hit the target infactuated with
+u8 infactuated_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+	if (user != src) return true;
+	if (rand_range(0, 100) < 50) {
+		return true;
+	} else {
+		enqueue_message(0, user, STRING_INFATUATED, 0);
+		return 3;
+	}
+}
+
+void infactuate_on_inflict(u8 bank)
+{
+	if (HAS_VOLATILE(bank, VOLATILE_INFACTUATION))
+		return;
+	ADD_VOLATILE(bank, VOLATILE_INFACTUATION);
+	enqueue_message(0, bank, STRING_ATTRACT, AILMENT_INFACTUATE);
+	add_callback(CB_ON_BEFORE_MOVE, 3, CB_PERMA, bank, (u32)infactuated_before_move);
 }
 
 
@@ -248,6 +271,20 @@ void confusion_on_inflict(u8 bank)
 
 
 /* Misc Ailment related effects */
+void silent_cure_major(u8 bank) {
+	p_bank[bank]->b_data.status = AILMENT_NONE;
+	p_bank[bank]->b_data.status_turns = 0;
+	delete_callback_src((u32)toxic_on_residual, bank);
+	delete_callback_src((u32)paralyze_on_before_move, bank);
+	delete_callback_src((u32)paralyze_on_mod_stat, bank);
+	delete_callback_src((u32)freeze_on_before_move, bank);
+	delete_callback_src((u32)burn_on_residual, bank);
+	delete_callback_src((u32)poison_on_residual, bank);
+	delete_callback_src((u32)sleep_on_before_move, bank);
+	delete_callback_src((u32)sleep_on_residual, bank);
+	status_graphical_update(bank, AILMENT_NONE);
+}
+
 void clear_ailments_silent(u8 bank) {
 	p_bank[bank]->b_data.status = AILMENT_NONE;
 	p_bank[bank]->b_data.pseudo_ailment = AILMENT_NONE;
@@ -263,6 +300,7 @@ void clear_ailments_silent(u8 bank) {
 	delete_callback_src((u32)poison_on_residual, bank);
 	delete_callback_src((u32)sleep_on_before_move, bank);
 	delete_callback_src((u32)sleep_on_residual, bank);
+    status_graphical_update(bank, AILMENT_NONE);
 }
 
 void effect_cure_on_inflict(u8 bank)
@@ -277,24 +315,24 @@ void battle_start_ailment_callback_init(u8 bank)
 	ailment_decode(bank, pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, NULL));
 	switch (p_bank[bank]->b_data.status) {
 		case AILMENT_BURN:
-			add_callback(CB_ON_RESIDUAL, 0, 0xFF, bank, (u32)burn_on_residual);
+			add_callback(CB_ON_RESIDUAL, 0, CB_PERMA, bank, (u32)burn_on_residual);
 			break;
 		case AILMENT_SLEEP:
 			add_callback(CB_ON_RESIDUAL, 3, 3, bank, (u32)sleep_on_residual);
 			add_callback(CB_ON_BEFORE_MOVE, 3, 3, bank, (u32)sleep_on_before_move);
 			break;
 		case AILMENT_POISON:
-			add_callback(CB_ON_RESIDUAL, 0, 0xFF, bank, (u32)poison_on_residual);
+			add_callback(CB_ON_RESIDUAL, 0, CB_PERMA, bank, (u32)poison_on_residual);
 			break;
 		case AILMENT_BAD_POISON:
-			add_callback(CB_ON_RESIDUAL, 0, 0xFF, bank, (u32)toxic_on_residual);
+			add_callback(CB_ON_RESIDUAL, 0, CB_PERMA, bank, (u32)toxic_on_residual);
 			break;
 		case AILMENT_FREEZE:
-			add_callback(CB_ON_BEFORE_MOVE, 3, 0xFF, bank, (u32)freeze_on_before_move);
+			add_callback(CB_ON_BEFORE_MOVE, 3, CB_PERMA, bank, (u32)freeze_on_before_move);
 			break;
 		case AILMENT_PARALYZE:
-			add_callback(CB_ON_STAT_MOD, 0, 0xFF, NULL, (u32)paralyze_on_mod_stat);
-			add_callback(CB_ON_BEFORE_MOVE, 3, 0xFF, bank, (u32)paralyze_on_before_move);
+			add_callback(CB_ON_STAT_MOD, 0, CB_PERMA, NULL, (u32)paralyze_on_mod_stat);
+			add_callback(CB_ON_BEFORE_MOVE, 3, CB_PERMA, bank, (u32)paralyze_on_before_move);
 			break;
 		default:
 			return;
@@ -347,4 +385,9 @@ struct status_ailments statuses[] =
     {
         .on_inflict = effect_cure_on_inflict,
     },
+
+	// Ailment infactuation
+	{
+		.on_inflict = infactuate_on_inflict,
+	}
 };

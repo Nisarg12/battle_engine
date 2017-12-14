@@ -112,7 +112,7 @@ u8 flying_press_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callb
 void flying_press_on_base_power(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
-    u8 base_power = B_MOVE_POWER(user);
+    u16 base_power = B_MOVE_POWER(user);
     if (HAS_VOLATILE(TARGET_OF(user), VOLATILE_MINIMIZE)) {
         if ((base_power << 1) < base_power) {
             B_MOVE_POWER(user) = 255;

@@ -23,11 +23,6 @@ bool try_hit(u8 attacker)
         return false;
     }
 
-    // if moves never misses, exit early
-    u8 move_accuracy = B_MOVE_ACCURACY(attacker);
-    if (move_accuracy > 100)
-        return true;
-
     // if target is in semi invulnerability do checks
     u8 defender = TARGET_OF(attacker);
     if (HAS_VOLATILE(defender, VOLATILE_SEMI_INVULNERABLE)) {
@@ -57,9 +52,14 @@ bool try_hit(u8 attacker)
         }
     }
 
-    // OHKO moves have their own accuracy checks
-    if (IS_OHKO(CURRENT_MOVE(attacker))) return true;
-
+    // if moves never misses, exit early
+    u8 move_accuracy = B_MOVE_ACCURACY(attacker);
+    if (move_accuracy > 100) {
+        return true;
+    } else {
+        // OHKO moves have their own accuracy checks
+        if (IS_OHKO(CURRENT_MOVE(attacker))) return true;
+    }
     // standard accuracy formula check
     u16 target_evasion;
     if (B_MOVE_IGNORE_EVASION(attacker)) {

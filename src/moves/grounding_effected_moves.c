@@ -31,6 +31,7 @@ u8 ingrain_on_effect(u8 user, u8 src, u16 status_id, struct anonymous_callback* 
     if (user != src) return true;
     if (has_callback_src((u32)ingrain_on_residual, user)) return false;
     ADD_VOLATILE(user, VOLATILE_INGRAIN);
+    ADD_VOLATILE(user, VOLATILE_TRAPPED);
     p_bank[user]->b_data.is_grounded = true;
     add_callback(CB_ON_RESIDUAL, 0, 0xFF, user, (u32)ingrain_on_residual);
     enqueue_message(NULL, user, STRING_ROOTS_PLANTED, 0);
@@ -121,12 +122,14 @@ u8 thousand_arrows_on_effectiveness(u8 user, u8 src, u16 move, struct anonymous_
     return effectiveness;
 }
 
-void thousand_arrow_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+u8 thousand_arrow_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
-    if (user != src) return;
-    if (is_grounded(TARGET_OF(user))) return;
-    // not grounded, apply grounding and effectiveness Callback.
+    if (user != src) return true;
     u8 target = TARGET_OF(user);
+    if (!is_grounded(target)) {
+        add_callback(CB_ON_EFFECTIVENESS, 0, 0, user, (u32)thousand_arrows_on_effectiveness);
+    }
+    // not grounded, apply grounding and effectiveness Callback.
     bool has_smackdown = HAS_VOLATILE(target, VOLATILE_SMACK_DOWN);
     smackdown_on_effect(user, src, move, acb);
     if (!has_smackdown) {
@@ -134,6 +137,5 @@ void thousand_arrow_before_move(u8 user, u8 src, u16 move, struct anonymous_call
     }
     ADD_VOLATILE(target, VOLATILE_THOUSAND_ARROWS);
     B_IS_GROUNDED(target) = true;
-    add_callback(CB_ON_EFFECTIVENESS, 0, 0, user, (u32)thousand_arrows_on_effectiveness);
     return true;
 }
