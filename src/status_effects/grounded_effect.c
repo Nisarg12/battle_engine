@@ -3,7 +3,6 @@
 #include "../battle_data/pkmn_bank_stats.h"
 #include "../battle_data/battle_state.h"
 #include "../moves/moves.h"
-#include "../battle_loop/move_chain_states.h"
 
 extern u8 magnet_rise_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 telekinesis_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb);

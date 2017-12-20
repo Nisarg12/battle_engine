@@ -4,116 +4,163 @@
 #include "battle_data/battle_state.h"
 #include "battle_text/battle_textbox_gfx.h"
 
-extern void battle_loop(void);
+extern void validate_player_selected_move(void);
 extern void vblank_cb_no_merge(void);
 extern void vblank_cb_merge_move_select(void);
+extern void vblank_cb_merge_tbox(void);
 extern void load_icons_moves(u8 bank);
 extern void update_cursor_move_select(u8 task_id);
 extern void show_move_data(void);
 extern void init_selection_cursor(u8 mode, u8 bank);
 extern void dprintf(const char * str, ...);
+extern void option_selection2(void);
+extern void switch_scene_main(void);
+extern void free_unused_objs(void);
+void event_peek_message(struct action* current_action);
+void CpuFastSet(void* src, void* dst, u32 mode);
 
 /* Fight menu and move menu selection. Preperation to go into battle loop*/
-void option_selection()
+
+#define SELECTING_BANK battle_master->option_selecting_bank
+
+enum BattleMenuSelectionOptions {
+    BaseMenuInitialize = 0,
+    BaseMenuInputInterpret,
+    FightOptionSelected_FirstTime,
+    FightOptionSelected_FastLoad,
+    SwitchOptionSelected,
+    BagOptionSelected,
+    RunOptionSelected,
+    MenuWaitState,
+    MoveSelectedExit,
+};
+
+/* Fight menu and move menu selection. Preperation to go into battle loop*/
+void option_selection(u8 bank)
 {
+    battle_master->option_selecting_bank = bank;
+    // check bank is skipping selection via move
+    if ((HAS_VOLATILE(bank, VOLATILE_CHARGING)) ||
+        (p_bank[bank]->b_data.skip_move_select) ||
+        (HAS_VOLATILE(bank, VOLATILE_RECHARGING))) {
+        // jump straight to move validation
+        set_callback1(validate_player_selected_move);
+        return;
+    }
+    set_callback1(option_selection2);
+    super.multi_purpose_state_tracker = BaseMenuInitialize;
+}
+
+
+void option_selection2()
+{
+    // the new peek message
+    if (ACTION_HEAD != NULL) {
+        CURRENT_ACTION = ACTION_HEAD;
+        event_peek_message(ACTION_HEAD);
+        return;
+    }
     switch (super.multi_purpose_state_tracker) {
-        case 0:
+        case BaseMenuInitialize:
         {
-            // if move is charging up, then option selection is skipped
-            if ((HAS_VOLATILE(PLAYER_SINGLES_BANK, VOLATILE_CHARGING))||
-                (p_bank[PLAYER_SINGLES_BANK]->b_data.skip_move_select) ||
-                (HAS_VOLATILE(PLAYER_SINGLES_BANK, VOLATILE_RECHARGING))) {
-                set_callback1(battle_loop);
-                return;
-            }
             // initialize fight menu selection
             vblank_handler_set(vblank_cb_no_merge);
             void* map_base = (void *)0x600F800;
-            memcpy(map_base, battle_textbox_action_selectMap, sizeof(battle_textbox_action_selectMap));
+            //memcpy(map_base, battle_textbox_action_selectMap, sizeof(battle_textbox_action_selectMap));
+            CpuFastSet((void*)&battle_textbox_action_selectMap, (void*)map_base, CPUModeFS(0x800, CPUFSCPY));
             init_selection_cursor(1, 0);
 
             // next state
             bs_anim_status = 1;
-            super.multi_purpose_state_tracker++;
+            super.multi_purpose_state_tracker = BaseMenuInputInterpret;
             break;
         }
-        case 1:
+        case BaseMenuInputInterpret:
             // wait for input selection from fight menu
             if (bs_anim_status)
                 return;
             // interpret selection
             switch (battle_master->selected_option) {
                 case OPTION_FIGHT:
-                    super.multi_purpose_state_tracker = (battle_master->fight_menu_content_spawned) ? 7 : 2;
+                    if (battle_master->fight_menu_content_spawned) {
+                        super.multi_purpose_state_tracker = FightOptionSelected_FastLoad;
+                    } else {
+                        super.multi_purpose_state_tracker = FightOptionSelected_FirstTime;
+                    }
                     break;
                 case OPTION_POKEMON:
-                    super.multi_purpose_state_tracker = 3;
+                    super.multi_purpose_state_tracker = SwitchOptionSelected;
                     break;
                 case OPTION_BAG:
-                    super.multi_purpose_state_tracker = 4;
+                    super.multi_purpose_state_tracker = BagOptionSelected;
                     break;
                 case OPTION_RUN:
-                    super.multi_purpose_state_tracker = 5;
+                    super.multi_purpose_state_tracker = RunOptionSelected;
                     break;
 
             };
             break;
-        case 2:
+        case FightOptionSelected_FirstTime:
             /* FIGHT selected from fight menu */
 
             // update tilemap
             vblank_handler_set(vblank_cb_merge_move_select);
             void* map_base = (void *)0x600F800;
-            memcpy(map_base, battle_textbox_move_selectMap, sizeof(battle_textbox_action_selectMap));
-
+            //memcpy(map_base, battle_textbox_move_selectMap, sizeof(battle_textbox_move_selectMap));
+            CpuFastSet((void*)&battle_textbox_move_selectMap, (void*)map_base, CPUModeFS(0x800, CPUFSCPY));
             // init cursor
             init_selection_cursor(0, 0);
 
             // init move types
-            load_icons_moves(PLAYER_SINGLES_BANK);
+            load_icons_moves(SELECTING_BANK);
             // set into pause state
             bs_anim_status = 1;
-            super.multi_purpose_state_tracker = 6;
+            super.multi_purpose_state_tracker = MenuWaitState;
             break;
-        case 3:
+        case FightOptionSelected_FastLoad:
+            {
+                vblank_handler_set(vblank_cb_merge_move_select);
+                void* map_base = (void *)0x600F800;
+                //memcpy(map_base, battle_textbox_move_selectMap, sizeof(battle_textbox_action_selectMap));
+                CpuFastSet((void*)&battle_textbox_move_selectMap, (void*)map_base, CPUModeFS(0x800, CPUFSCPY));
+                show_move_data();
+                tasks[task_add(update_cursor_move_select, 1)].priv[0] = 0;
+                bs_anim_status = 1;
+                super.multi_purpose_state_tracker = MenuWaitState;
+                break;
+            }
+        case SwitchOptionSelected:
             // POKEMON selection from fight menu
-            fade_screen(0xFFFFFFFF, 0,0,16, 0x0000);
-            extern void switch_scene_main(void);
+            fade_screen(0xFFFFFFFF, 0, 0, 16, 0x0000);
+            free_unused_objs();
+            battle_master->switch_main.position = 0;
+            battle_master->fight_menu_content_spawned  = 0;
             super.multi_purpose_state_tracker = 0;
             set_callback1(switch_scene_main);
             break;
-        case 4:
+        case BagOptionSelected:
             // BAG selected from fight menu
             break;
-        case 5:
+        case RunOptionSelected:
         {
             // RUN selected from fight menu
-            extern void free_unused_objs(void);
-            free_unused_objs();
-            p_bank[PLAYER_SINGLES_BANK]->b_data.is_running = true;
-            super.multi_purpose_state_tracker = 8;
+            p_bank[SELECTING_BANK]->b_data.is_running = true;
+            super.multi_purpose_state_tracker = MoveSelectedExit;
+            break;
         }
+        case MenuWaitState:
             break;
-        case 6:
-            break;
-        case 7:
-            {
-            vblank_handler_set(vblank_cb_merge_move_select);
-            void* map_base = (void *)0x600F800;
-            memcpy(map_base, battle_textbox_move_selectMap, sizeof(battle_textbox_action_selectMap));
-            show_move_data();
-            tasks[task_add(update_cursor_move_select, 1)].priv[0] = 0;
-            bs_anim_status = 1;
-            super.multi_purpose_state_tracker = 6;
-            break;
-            }
-        case 8:
+        case MoveSelectedExit:
         {
-            set_callback1(battle_loop);
-            void* map_base = (void *)0x600F800;
-            memcpy(map_base, battle_textboxMap, sizeof(battle_textboxMap));
+            free_unused_objs();
+            set_callback1(validate_player_selected_move);
+            vblank_handler_set((SuperCallback)vblank_cb_merge_tbox);
+            battle_master->fight_menu_content_spawned  = 0;
             super.multi_purpose_state_tracker = 0;
             break;
         }
+        case 9:
+            // pick move validator function based on battle type
+            return;
     };
 }

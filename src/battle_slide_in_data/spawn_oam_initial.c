@@ -15,7 +15,8 @@
 #define PLAYER_BTAG 0x300
 
 // initial positions before starting to apply sliding
-#define PLAYER_X_POS_SLIDE -192
+#define PLAYER_X_POS_SLIDE -176
+
 #define OPP1_X_POS_SLIDE -80
 
 const struct OamData opp_oam = {
@@ -50,7 +51,7 @@ bool is_shiny(struct Pokemon* p)
     u32 pid = pokemon_getattr(p, REQUEST_PID, NULL);
 
     /* the weird shiny formula */
-    return ((tid >> 16) ^ tid ^ (pid >> 16) ^ pid) <= 7; 
+    return ((tid >> 16) ^ tid ^ (pid >> 16) ^ pid) <= 7;
 }
 
 void* get_pal_pkmn(struct Pokemon* p, u16 species)
@@ -61,12 +62,12 @@ void* get_pal_pkmn(struct Pokemon* p, u16 species)
         return (void*)pokemon_palette_shiny[species].data;
 }
 
-u8 spawn_pkmn_obj_slot(u8 slot, u16 tag)
+u8 spawn_pkmn_obj_slot(u8 bank, u16 tag)
 {
-    struct Pokemon* pkmn = (struct Pokemon*)0x202402C;
+    struct Pokemon* pkmn = p_bank[bank]->this_pkmn;
 
-    u16 species = pokemon_getattr(&pkmn[slot], REQUEST_SPECIES, NULL);
-    void* pkmn_pal = get_pal_pkmn(&pkmn[slot], species);
+    u16 species = pokemon_getattr(pkmn, REQUEST_SPECIES, NULL);
+    void* pkmn_pal = get_pal_pkmn(pkmn, species);
     void* pkmn_gfx = (void*)pokemon_graphics_front[species].data;
 
     struct SpritePalette pkmn_sprite_pal = {pkmn_pal, tag};
@@ -78,12 +79,12 @@ u8 spawn_pkmn_obj_slot(u8 slot, u16 tag)
     return template_instanciate_forward_search(&pkmn_temp, OPP1_X_POS_SLIDE, 54, 0);
 }
 
-u8 spawn_pkmn_backsprite_obj_slot(u8 slot, u16 tag)
+u8 spawn_pkmn_backsprite_obj_slot(u8 bank, u16 tag)
 {
-    struct Pokemon* pkmn = (struct Pokemon*)0x202402C;
+    struct Pokemon* pkmn = p_bank[bank]->this_pkmn;
 
-    u16 species = pokemon_getattr(&pkmn[slot], REQUEST_SPECIES, NULL);
-    void* pkmn_pal = get_pal_pkmn(&pkmn[slot], species);
+    u16 species = pokemon_getattr(pkmn, REQUEST_SPECIES, NULL);
+    void* pkmn_pal = get_pal_pkmn(pkmn, species);
     void* pkmn_gfx = (void*)pokemon_graphics_back[species].data;
 
     struct SpritePalette pkmn_sprite_pal = {pkmn_pal, tag};
@@ -103,8 +104,8 @@ static struct Frame trainer_slide_in[] = {
 
 static struct Frame trainer_throw_out_frames[] = {
     {0, 0},
-    {64, 19},
-    {128, 6},
+    {64, 23},
+    {128, 7},
     {192, 6},
     {256, 6},
     {0xFFFF, 0},
@@ -170,10 +171,11 @@ u8 spawn_backsprite_npc(u8 sprite_id, u16 tag)
     return objid;
 }
 
-void wild_battle_slidein()
+// this creates the opponent battler & player backsprite
+void create_sprites_wild_battlers()
 {
     // wild mon first
-    u8 objid = spawn_pkmn_obj_slot(0, OPP1_BTAG);
+    u8 objid = spawn_pkmn_obj_slot(OPPONENT_SINGLES_BANK, OPP1_BTAG);
     p_bank[OPPONENT_SINGLES_BANK]->objid = objid;
 
     // gender based player character
@@ -182,13 +184,16 @@ void wild_battle_slidein()
         } else {
             objid = spawn_backsprite_npc(1, PLAYER_BTAG);
         }
-    
-    bs_env_windows->player_trainer_objid = objid;
+    if (bs_env_windows != NULL)
+        bs_env_windows->player_trainer_objid = objid;
 }
 
 
+void create_sprites_battle_mons_wild()
+{
+    // wild mon first
+    u8 objid = spawn_pkmn_obj_slot(OPPONENT_SINGLES_BANK, OPP1_BTAG);
+    p_bank[OPPONENT_SINGLES_BANK]->objid = objid;
 
-
-
-
-
+    p_bank[PLAYER_SINGLES_BANK]->objid = spawn_pkmn_backsprite_obj_slot(PLAYER_SINGLES_BANK, PLAYER_BTAG);
+}

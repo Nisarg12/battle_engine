@@ -30,7 +30,7 @@ u8 conversion_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* ac
 u8 conversion_two_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
-    u8 last_type = MOVE_TYPE(LAST_MOVE(FOE_BANK(user)));
+    u8 last_type = MOVE_TYPE(LAST_MOVE((user ? 0 : 2)));
     u8 possible_types[MTYPE_NONE];
     memset(&possible_types, MTYPE_NONE, MTYPE_NONE);
     if (last_type == MTYPE_EGG)
@@ -177,7 +177,8 @@ u8 forests_curse_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback*
 u8 electrify_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
-    return (user == battle_master->first_bank);
+    return true;
+    return (p_bank[TARGET_OF(user)]->b_data.will_move);
 }
 
 u8 electrify_on_modify_move_anon(u8 user, u8 src, u16 move, struct anonymous_callback* acb)

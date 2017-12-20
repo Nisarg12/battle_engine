@@ -66,7 +66,7 @@ u8 synthesis_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* a
 
 
 // Growth
-u8 growth_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+u8 growth_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
     if ((battle_master->field_state.is_sunny) || (battle_master->field_state.is_desolate_land)) {

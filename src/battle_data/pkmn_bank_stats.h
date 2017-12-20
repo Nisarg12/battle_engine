@@ -5,11 +5,19 @@
 #include "battle_data/pkmn_bank.h"
 #include "battle_state.h"
 #include "moves/moves.h"
+#include "battle_actions/actions.h"
 #include "battle_text/battle_pick_message.h"
 
 extern bool has_volatile(u8 bank, enum Volatiles v);
 extern void clear_volatile(u8 bank, enum Volatiles v);
 extern void add_volatile(u8 bank, enum Volatiles v);
+
+// this one is unrelated but I want to have it here
+#define CPUFSCPY 0
+#define CPUFSSET 1
+#define CPUModeFS(size, mode) ((size >> 2) | (mode << 24))
+#define OBJID_HIDE(objid) objects[objid].final_oam.affine_mode = 2
+#define OBJID_SHOW(objid) objects[objid].final_oam.affine_mode = 0
 
 /* To be removed when species expansion hits */
 #define SPECIES_ASH_GRENINJA 0
@@ -87,30 +95,29 @@ extern void add_volatile(u8 bank, enum Volatiles v);
 #define CURRENT_MOVE(bank) (p_bank[bank]->b_data.current_move)
 #define LAST_MOVE(bank) (p_bank[bank]->b_data.last_move)
 #define BANK_ABILITY(bank) (p_bank[bank]->b_data.ability)
-#define B_MOVE_BANK(bank) ((bank == battle_master->first_bank) ? 0 : 1)
 #define B_PKMN(bank) (p_bank[bank]->this_pkmn)
-#define B_MOVE_TYPE(bank, i) (battle_master->b_moves[B_MOVE_BANK(bank)].type[i])
-#define B_MOVE_POWER(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].power)
-#define B_MOVE_STAB(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].stab)
-#define B_MOVE_ACCURACY(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].accuracy)
-#define B_MOVE_PRIORITY(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].priority)
-#define B_MOVE_REMOVE_CONTACT(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].remove_contact)
-#define B_MOVE_IGNORING_ABILITIES(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].ignore_abilities)
+#define B_FLINCH(bank) (p_bank[bank]->b_data.flinch)
+#define B_MOVE_FLINCH(bank) (battle_master->b_moves[bank].flinch)
+#define B_MOVE_TYPE(bank, i) (battle_master->b_moves[bank].type[i])
+#define B_MOVE_POWER(bank) (battle_master->b_moves[bank].power)
+#define B_MOVE_STAB(bank) (battle_master->b_moves[bank].stab)
+#define B_MOVE_ACCURACY(bank) (battle_master->b_moves[bank].accuracy)
+#define B_MOVE_PRIORITY(bank) (battle_master->b_moves[bank].priority)
+#define B_MOVE_REMOVE_CONTACT(bank) (battle_master->b_moves[bank].remove_contact)
+#define B_MOVE_IGNORING_ABILITIES(bank) (battle_master->b_moves[bank].ignore_abilities)
 #define B_MOVE_HAS_TYPE(bank, type) ((B_MOVE_TYPE(bank, 0) == type) || (B_MOVE_TYPE(bank, 1) == type))
-#define B_MOVE_IS_STATUS(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].category == MOVE_STATUS)
-#define B_MOVE_IS_SPECIAL(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].category == MOVE_SPECIAL)
-#define B_MOVE_IS_PHYSICAL(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].category == MOVE_PHYSICAL)
-#define B_MOVE_CATEGORY(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].category)
-#define B_MOVE_WILL_CRIT_SET(bank, result) (battle_master->b_moves[B_MOVE_BANK(bank)].will_crit = result)
-#define B_MOVE_WILL_CRIT(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].will_crit)
-#define B_MOVE_CAN_CRIT(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].can_crit)
-#define B_MOVE_HAS_BOUNCED(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].has_bounced)
-#define B_MOVE_DMG(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].dmg)
-#define B_MOVE_EFFECTIVENESS(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].effectiveness)
-#define B_MOVE_IGNORE_ATK(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].ignore_target_atk)
-#define B_MOVE_IGNORE_DEF(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].ignore_target_def)
-#define B_MOVE_IGNORE_EVASION(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].ignore_target_evasion)
-#define B_MOVE_MULTI(bank) ((battle_master->b_moves[B_MOVE_BANK(bank)].hit_times > 1) || (battle_master->b_moves[B_MOVE_BANK(bank)].hit_counter > 1))
+#define B_MOVE_IS_STATUS(bank) (battle_master->b_moves[bank].category == MOVE_STATUS)
+#define B_MOVE_IS_SPECIAL(bank) (battle_master->b_moves[bank].category == MOVE_SPECIAL)
+#define B_MOVE_IS_PHYSICAL(bank) (battle_master->b_moves[bank].category == MOVE_PHYSICAL)
+#define B_MOVE_CATEGORY(bank) (battle_master->b_moves[bank].category)
+#define B_MOVE_WILL_CRIT(bank) (battle_master->b_moves[bank].will_crit)
+#define B_MOVE_CAN_CRIT(bank) (battle_master->b_moves[bank].can_crit)
+#define B_MOVE_DMG(bank) (battle_master->b_moves[bank].dmg)
+#define B_MOVE_EFFECTIVENESS(bank) (battle_master->b_moves[bank].effectiveness)
+#define B_MOVE_IGNORE_ATK(bank) (battle_master->b_moves[bank].ignore_target_atk)
+#define B_MOVE_IGNORE_DEF(bank) (battle_master->b_moves[bank].ignore_target_def)
+#define B_MOVE_IGNORE_EVASION(bank) (battle_master->b_moves[bank].ignore_target_evasion)
+#define B_MOVE_MULTI(bank) ((battle_master->b_moves[bank].hit_times > 1) || (battle_master->b_moves[bank].hit_counter > 1))
 #define PROTECTION_TURNS(bank) (p_bank[bank]->b_data.protect_used_turns)
 #define B_GENDER(bank) (p_bank[bank]->b_data.gender)
 #define B_REDUCE_PP(bank) (p_bank[bank]->b_data.reduce_pp)
@@ -124,13 +131,13 @@ extern void add_volatile(u8 bank, enum Volatiles v);
 #define TARGET_OF(bank) (p_bank[bank]->b_data.my_target)
 #define SET_CONFUSION_TURNS(bank, v) (p_bank[bank]->b_data.confusion_turns = v)
 #define B_IS_GROUNDED(bank) (p_bank[bank]->b_data.is_grounded)
-#define B_IS_PRANKSTER(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].prankstered)
-#define B_INFILTRATES(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].infiltrates)
-#define B_HEAL(bank) (battle_master->b_moves[B_MOVE_BANK(bank)].heal)
+#define B_INFILTRATES(bank) (battle_master->b_moves[bank].infiltrates)
+#define B_HEAL(bank) (battle_master->b_moves[bank].heal)
 #define B_GET_ITEM(bank) (p_bank[bank]->b_data.item)
 #define B_MOVE_FAILED(bank) (p_bank[bank]->b_data.move_failed)
 #define B_LAST_MOVE_FAILED(bank) (p_bank[bank]->b_data.last_move_failed)
-#define B_IS_FAINTED(bank) (p_bank[bank]->b_data.fainted)
+#define B_IS_FAINTED(bank) ((p_bank[bank]->b_data.fainted) || (B_CURRENT_HP(bank) < 1))
+#define B_FAINTED(bank) (p_bank[bank]->b_data.fainted)
 #define B_GET_MOVE(bank, id) (p_bank[bank]->b_data.moves[id])
 #define B_GET_MOVE_PP(bank, id) (p_bank[bank]->b_data.move_pp[id])
 
@@ -138,18 +145,16 @@ extern void add_volatile(u8 bank, enum Volatiles v);
  *
  * Secondary status macros from battle state
  */
-#define B_USER_STAT_MOD_CHANCE(bank, stat) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.chance_user[stat]
-#define B_USER_STAT_MOD_AMOUNT(bank, stat) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.user_amounts[stat]
+#define B_USER_STAT_MOD_CHANCE(bank, stat) (battle_master->b_moves[bank].b_procs.chance_user[stat])
+#define B_USER_STAT_MOD_AMOUNT(bank, stat) (battle_master->b_moves[bank].b_procs.user_amounts[stat])
 
-#define B_TARGET_STAT_MOD_CHANCE(bank, stat) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.chance_target[stat]
-#define B_TARGET_STAT_MOD_AMOUNT(bank, stat) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.target_amounts[stat]
+#define B_TARGET_STAT_MOD_CHANCE(bank, stat) (battle_master->b_moves[bank].b_procs.chance_target[stat])
+#define B_TARGET_STAT_MOD_AMOUNT(bank, stat) (battle_master->b_moves[bank].b_procs.target_amounts[stat])
 
-#define B_AILMENT_PROCS_CHANCE_USER(bank) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.ailment_user_chance
-#define B_AILMENT_PROCS_CHANCE_TARGET(bank) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.ailment_target_chance
-#define B_AILMENT_PROCS_USER(bank) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.ailment_user
-#define B_AILMENT_PROCS_TARGET(bank) battle_master->b_moves[B_MOVE_BANK(bank)].b_procs.ailment_target
-
-
+#define B_AILMENT_PROCS_CHANCE_USER(bank) (battle_master->b_moves[bank].b_procs.ailment_user_chance)
+#define B_AILMENT_PROCS_CHANCE_TARGET(bank) (battle_master->b_moves[bank].b_procs.ailment_target_chance)
+#define B_AILMENT_PROCS_USER(bank) (battle_master->b_moves[bank].b_procs.ailment_user)
+#define B_AILMENT_PROCS_TARGET(bank) (battle_master->b_moves[bank].b_procs.ailment_target)
 
 
 /*
@@ -157,11 +162,12 @@ extern void add_volatile(u8 bank, enum Volatiles v);
  */
 #define PLAYER_SIDE 0
 #define OPPONENT_SIDE 1
-#define FOE_BANK(bank) (bank ? 0 : 2)
+
 #define SIDE_OF(bank) ((bank > 1) ? 1 : 0)
 #define ACTIVE_BANK(bank) (p_bank[bank]->b_data.is_active_bank)
 
-
+#define ACTION_PRANKSTER (CURRENT_ACTION->prankstered)
+#define ACTION_BOUNCED (CURRENT_ACTION->has_bounced)
 
 #define MOVE_EFFECTIVENESS(target_type, dmg_type) (effectiveness_chart[((target_type * 19) + (dmg_type))])
 

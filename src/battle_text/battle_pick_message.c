@@ -7,11 +7,12 @@
 extern void dprintf(const char * str, ...);
 extern void buffer_write_pkmn_nick(pchar* buff, u8 bank);
 extern void buffer_write_move_name(pchar* buff, u16 move_id);
+extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 
-void pick_encounter_message(enum BattleFlag battle_type_flags)
+void pick_encounter_message(enum BattleTypes battle_type_flag)
 {
-    switch (battle_type_flags) {
-        case BATTLE_FLAG_WILD:
+    switch (battle_type_flag) {
+        case BATTLE_MODE_WILD:
         {
             pchar text[] = _("A wild {STR_VAR_1} appeared!\pGo! {STR_VAR_2}!");
             buffer_write_pkmn_nick(fcode_buffer3, PLAYER_SINGLES_BANK);
@@ -19,16 +20,11 @@ void pick_encounter_message(enum BattleFlag battle_type_flags)
             fdecoder(string_buffer, text);
             break;
         }
-        case BATTLE_FLAG_DOUBLE:
-        case BATTLE_FLAG_LINK:
-        case BATTLE_FLAG_TRAINER:
-        case BATTLE_FLAG_OAK_TUTORIAL:
-        case BATTLE_FLAG_PARTNER:
-        case BATTLE_FLAG_SAFARI:
-        case BATTLE_FLAG_OLD_MAN:
-        case BATTLE_FLAG_ROAMING:
-        case BATTLE_FLAG_GHOST:
-        case BATTLE_FLAG_POKE_DUDE:
+        case BATTLE_MODE_WILD_DOUBLE:
+        case BATTLE_MODE_TRAINER:
+        case BATTLE_MODE_TRAINER_DOUBLE:
+        case BATTLE_MODE_PARTNER:
+        default:
             break;
     };
 
@@ -36,11 +32,11 @@ void pick_encounter_message(enum BattleFlag battle_type_flags)
 
 
 extern void fdecoder_battle(const pchar* buffer, u8 bank, u16 move_id, u16 move_effect_id);
-void pick_battle_message(u16 move_id, u8 user_bank, enum BattleFlag battle_type, enum battle_string_ids id, u16 move_effect_id)
+void pick_battle_message(u16 move_id, u8 user_bank, enum BattleTypes battle_type, enum battle_string_ids id, u16 move_effect_id)
 {
     u8 side = SIDE_OF(user_bank);
     remo_reset_acknowledgement_flags();
-    if (battle_type_flags == BATTLE_FLAG_WILD) {
+    if (battle_type_flag == BATTLE_MODE_WILD) {
         switch (id) {
             case STRING_EXP_GAIN:
             case STRING_MULTI_HIT:
@@ -222,6 +218,7 @@ void pick_battle_message(u16 move_id, u8 user_bank, enum BattleFlag battle_type,
             case STRING_SAPPED:
             case STRING_TIGHTEN_FOCUS:
             case STRING_BEAK_BLAST:
+            case STRING_HEART_SWAP:
                 fdecoder_battle(battle_strings[id], user_bank, move_id, move_effect_id);
                 break;
             case STRING_IMMUNE_ABILITY:
@@ -236,4 +233,40 @@ void pick_battle_message(u16 move_id, u8 user_bank, enum BattleFlag battle_type,
                 break;
         };
     }
+}
+
+/* Pick and queue effectiveness string. 0 = fail should fail/immune. */
+bool damage_result_msg(u8 bank_index)
+{
+    // effectiveness msgs
+    bool effective = true;
+    switch (B_MOVE_EFFECTIVENESS(bank_index)) {
+        case TE_IMMUNE:
+            if (!B_MOVE_MULTI(bank_index))
+                enqueue_message(0, bank_index, STRING_MOVE_IMMUNE, 0);
+            effective = false;
+            break;
+        case TE_NOT_VERY_EFFECTIVE:
+            if (!B_MOVE_MULTI(bank_index))
+                enqueue_message(0, 0, STRING_MOVE_NVE, 0);
+            break;
+        case TE_SUPER_EFFECTIVE:
+            if (!B_MOVE_MULTI(bank_index))
+                enqueue_message(0, 0, STRING_MOVE_SE, 0);
+            break;
+        case TE_OHKO:
+            if (!B_MOVE_MULTI(bank_index))
+                enqueue_message(0, 0, STRING_OHKO, 0);
+            break;
+        default:
+            break;
+    };
+
+    if (effective) {
+        // crit msg if crit
+        if (B_MOVE_WILL_CRIT(bank_index)) {
+            enqueue_message(0, bank_index, STRING_MOVE_CRIT, 0);
+        }
+    }
+    return effective;
 }

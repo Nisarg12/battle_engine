@@ -2,6 +2,7 @@
 #include "../battle_data/pkmn_bank.h"
 #include "../battle_data/pkmn_bank_stats.h"
 #include "../battle_data/battle_state.h"
+#include "../battle_events/battle_events.h"
 
 extern void dprintf(const char * str, ...);
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
@@ -18,7 +19,7 @@ u8 perish_song_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback*
             enqueue_message(0, i, STRING_COUNT_FELL, 3 - p_bank[i]->b_data.perish_song_counter);
             p_bank[i]->b_data.perish_song_counter += 1;
             if (p_bank[i]->b_data.perish_song_counter > 3) {
-                B_IS_FAINTED(i) = true;
+                B_FAINTED(i) = true;
                 do_damage(i, B_CURRENT_HP(i));
             }
         }
@@ -75,7 +76,7 @@ void destiny_bond_on_damage(u8 user, u8 src, u16 move, struct anonymous_callback
         if (dmg > B_CURRENT_HP(src)) {
             u8 id = add_callback(CB_ON_FAINT_CHECK, 0, 0, src, (u32)destiny_bond_on_faint);
             CB_MASTER[id].data_ptr = user;
-            B_IS_FAINTED(user) = true;
+            B_FAINTED(user) = true;
         }
     }
 }
@@ -150,5 +151,14 @@ void final_gambit_on_damage(u8 user, u8 src, u16 move, struct anonymous_callback
 {
     if (user != src) return;
     B_MOVE_DMG(user) = B_CURRENT_HP(user);
-    B_IS_FAINTED(user) = true;
+    B_FAINTED(user) = true;
+}
+
+/* Self Destruct, Explosion */
+// These moves fail with Damp on the field. Damp should handle this effect.
+u8 self_destruct_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (user != src) return true;
+    do_damage(user, B_CURRENT_HP(user));
+    return true;
 }

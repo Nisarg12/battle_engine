@@ -8,6 +8,40 @@
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 extern void dprintf(const char * str, ...);
 
+void CpuFastSet(void* src, void* dst, u32 mode)
+{
+    __asm__("swi 0xC");
+}
+
+bool nature_stat_boosted(u8 stat, struct Pokemon *pokemon) {
+    u8 nature = get_nature(pokemon_getattr(pokemon, REQUEST_PID, NULL));
+    if ((nature / 5) == (nature % 5))
+        return false;
+    return stat == (nature / 5);
+}
+
+bool nature_stat_nerved(u8 stat, struct Pokemon *pokemon) {
+    u8 nature = get_nature(pokemon_getattr(pokemon, REQUEST_PID, NULL));
+    if ((nature / 5) == (nature % 5))
+        return false;
+    return stat == (nature % 5);
+}
+
+s8 get_move_priority(u8 bank)
+{
+    u16 move = CURRENT_MOVE(bank);
+
+    /* update selected move's innate priority */
+    s8 priority = 0;
+    priority += MOVE_PRIORITY(move);
+    B_MOVE_PRIORITY(bank) = priority;
+//    exec_callbacks(CB_ON_PRIORITY);
+
+    /* on flee & switch the actor has a priority high enough to outspeed everything except pursuit */
+    if ((p_bank[bank]->b_data.is_running) || (p_bank[bank]->b_data.is_switching))
+        priority = 6;
+    return priority;
+}
 
 u16 rand_range(u16 min, u16 max)
 {
@@ -132,37 +166,6 @@ bool on_ground(u8 bank)
 }
 
 
-void do_damage(u8 bank_index, u16 dmg)
-{
-    // HP bar damage animation
-    extern void hp_anim_change(u8 bank, s16 delta);
-    s16 delta = B_CURRENT_HP(bank_index) - dmg;
-    delta = MAX(delta, 0);
-    hp_anim_change(bank_index, delta);
-}
-
-void do_heal(u8 bank_index, u8 percent_heal)
-{
-    // HP bar damage animation
-    extern void hp_anim_change(u8 bank, s16 delta);
-    u16 heal = NUM_MOD(TOTAL_HP(bank_index), percent_heal);
-    if (TOTAL_HP(bank_index) < (heal + B_CURRENT_HP(bank_index))) {
-        heal = TOTAL_HP(bank_index) - B_CURRENT_HP(bank_index);
-    }
-    if (heal > 0) {
-        hp_anim_change(bank_index, heal + B_CURRENT_HP(bank_index));
-    }
-}
-
-void flat_heal(u8 bank, u16 heal)
-{
-    extern void hp_anim_change(u8 bank, s16 delta);
-    u16 max_heal = TOTAL_HP(bank) - B_CURRENT_HP(bank);
-    if (heal > 0) {
-        hp_anim_change(bank, B_CURRENT_HP(bank) + MIN(heal, max_heal));
-    }
-}
-
 
 //TODO: IMPLEMENT
 void set_ability(u8 bank, u8 source, u8 new_ability)
@@ -213,4 +216,21 @@ u8 count_total_moves(u8 bank)
         }
     }
     return move_total;
+}
+
+
+bool moves_last(u8 bank)
+{
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        if (battle_master->bank_order[i] == bank) {
+            if ((i == (BANK_MAX - 1))) {
+                return true;
+            }
+            if (i < (BANK_MAX - 1)) {
+                return (battle_master->bank_order[i + 1] == 0x3F);
+            }
+            return false;
+        }
+    }
+    return false;
 }

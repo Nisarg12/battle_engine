@@ -67,7 +67,7 @@ u8 wish_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 // Yawn
 u16 yawn_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
-    if (user != (FOE_BANK(src))) return true;
+    if (user != acb->data_ptr) return true;
     if (acb->duration == 0) {
         set_status(user, AILMENT_SLEEP);
         acb->in_use = false;
@@ -86,9 +86,11 @@ u8 yawn_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 u8 yawn_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
-    if (B_STATUS(user)) return false;
-    u8 id = add_callback(CB_ON_RESIDUAL, 0, 0, src, (u32)yawn_on_residual);
+    if (B_STATUS(TARGET_OF(user))) return false;
+    u8 id = add_callback(CB_ON_RESIDUAL, 0, 0, user, (u32)yawn_on_residual);
     CB_MASTER[id].delay_before_effect = 1;
+    CB_MASTER[id].data_ptr = TARGET_OF(user);
+    
     enqueue_message(0, user, STRING_GREW_DROWSY, 0);
     return true;
 }

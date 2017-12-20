@@ -12,9 +12,9 @@ struct bs_elements_positions {
     s16 wintop;
     s16 winbot;
     u8 player_trainer_objid;
+    u8 partner_trainer_objid;
 };
 
 extern struct bs_elements_positions* bs_env_windows;
 
 #endif /* BATTLE_ENTRY_OBJ_H_ */
-

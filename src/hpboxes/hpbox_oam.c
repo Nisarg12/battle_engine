@@ -393,13 +393,9 @@ void spawn_hpboxes_wild(void)
     objects[p_bank[PLAYER_SINGLES_BANK]->objid_hpbox[2]].pos1.x += 128;
 }
 
-extern bool message_exists(void);
-extern void run_move(void);
-extern void play_bmessage(void);
+
 void hpbar_apply_dmg(u8 task_id)
 {
-    if (message_exists() && ((super.callback1 == play_bmessage) || (super.callback1 == run_move)))
-        return;
     u16 bank = tasks[task_id].priv[0];
     s16 delta = tasks[task_id].priv[1];
     if (B_CURRENT_HP(bank) != delta) {

@@ -60,6 +60,6 @@ void beatup_before_turn(u8 user, u8 src, u16 move, struct anonymous_callback* ac
         hitters++;
         CB_MASTER[cb_id].data_ptr |= (1 << i);
     }
-    battle_master->b_moves[B_MOVE_BANK(user)].hit_times = hitters -1;
-    battle_master->b_moves[B_MOVE_BANK(user)].hit_counter = 1;
+    battle_master->b_moves[(user)].hit_times = hitters -1;
+    battle_master->b_moves[(user)].hit_counter = 1;
 }

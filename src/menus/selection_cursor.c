@@ -84,15 +84,6 @@ void update_cursor_move_select(u8 t_id)
         {
             // return to previous fight menu
             task_del(t_id);
-            /* obj_free(&objects[battle_master->battle_cursor.objid_mv_crsr[0]]);
-            obj_free(&objects[battle_master->battle_cursor.objid_mv_crsr[1]]);
-            obj_free(&objects[battle_master->battle_cursor.objid]);
-            u8 i;
-            for (i = 0; i < 4; i++) {
-                if (battle_master->type_objid[i] != 0x3F)
-                    obj_free(&objects[battle_master->type_objid[i]]);
-                obj_free(&objects[battle_master->move_name_objid[i]]);
-            } */
             obj_free(&objects[battle_master->battle_cursor.objid_mv_crsr[0]]);
             obj_free(&objects[battle_master->battle_cursor.objid_mv_crsr[1]]);
             obj_free(&objects[battle_master->battle_cursor.objid]);
@@ -329,6 +320,7 @@ void free_unused_objs()
     if (battle_master->battle_cursor.objid_mv_crsr[0] != 0x3F) {
         obj_free(&objects[battle_master->battle_cursor.objid_mv_crsr[0]]);
         obj_free(&objects[battle_master->battle_cursor.objid_mv_crsr[1]]);
+
     }
     for (u8 i = 0; i < 4; i++) {
         if (battle_master->type_objid[i] != 0x3F) {
@@ -336,7 +328,8 @@ void free_unused_objs()
             obj_free(&objects[battle_master->move_pss_objid[i]]);
             obj_free(&objects[battle_master->move_pp_objid[i]]);
         }
-        if (battle_master->move_name_objid[i] != 0x3F)
+        if (battle_master->move_name_objid[i] != 0x3F) {
             obj_free(&objects[battle_master->move_name_objid[i]]);
+        }
     }
 }

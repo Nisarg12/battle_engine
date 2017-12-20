@@ -4,10 +4,17 @@
 #include "pkmn_bank.h"
 #include "../moves/moves.h"
 #include "../anonymous_callbacks/anonymous_callbacks.h"
+#include "../battle_actions/actions.h"
 #include <pokeagb/pokeagb.h>
 
-#define GAME_STATE super.multi_purpose_state_tracker
-typedef void (*ResidualEffectCallback)(u8);
+enum BattleTypes {
+    BATTLE_MODE_WILD,
+    BATTLE_MODE_WILD_DOUBLE,
+    BATTLE_MODE_TRAINER,
+    BATTLE_MODE_TRAINER_DOUBLE,
+    BATTLE_MODE_PARTNER,
+};
+extern enum BattleTypes battle_type_flag;
 
 enum Effect {
     EFFECT_NONE,
@@ -52,7 +59,8 @@ struct battle_selection_cursor {
 
 struct global_message {
     u16 move_id;
-    u8 bank;
+    u8 bank : 7;
+    u8 in_use : 1;
     u8 string_id;
     u16 effect;
 };
@@ -88,16 +96,13 @@ struct move_used {
     u8 accuracy; // over 100 = never miss
 
     u16 remove_contact : 1;
-    u16 copied : 1;
     u16 ignore_abilities : 1;
-    u16 prankstered : 1;
     u16 infiltrates : 1;
     u16 will_crit : 1;
     u16 can_crit : 1;
     u16 ignore_target_atk : 1;
     u16 ignore_target_def : 1;
     u16 ignore_target_evasion : 1;
-    u16 has_bounced : 1;
 
     struct move_procs b_procs;
 
@@ -111,16 +116,48 @@ struct move_used {
 
 typedef u16 (*StatModifierCallback)(u16 stat, u8 id, u8 bank);
 
+enum switch_reason {
+    PokemonFainted,
+    ViewPokemon,
+    ForcedSwitch,
+};
+
+struct switch_pokemon_data {
+    u32 PID;
+    u16 species;
+    u16 current_hp;
+    u16 total_hp;
+    u8 ability;
+    u16 item;
+    u16 stats[5];
+    struct TextColor* nature_boosted[5];
+    u16 move[4];
+    u16 pp[4];
+    pchar nickname[20];
+};
+
+struct switch_data {
+    u8 list_count;
+    struct switch_pokemon_data s_pkmn_data[6];
+};
+
 struct switch_menu {
     u8 type_objid[10];
     u8 slider_objid[3];
     u8 icon_objid[6];
     u8 position;
-    bool will_switch;
+    enum switch_reason reason;
+    u8 unswitchable_bank; // used if a pkmn is forced out
+    void* back_buffer;
+    struct switch_data* sd;
 };
 
 struct battle_main {
     struct battle_field_state field_state;
+
+    /* Battle actions */
+    struct action* action_head;
+    struct action* this_action;
 
     /* Main Battle callbacks */
     struct anonymous_callback anon_cb_master[ANON_CB_MAX];
@@ -129,7 +166,7 @@ struct battle_main {
     u8 executing : 1;
     u8 bank_state;
 
-    /* Object ids and positions */
+    /* Object ids and positions for fight menu */
     struct battle_selection_cursor battle_cursor;
     u8 selected_option;
     u8 type_objid[4];
@@ -137,29 +174,16 @@ struct battle_main {
     u8 move_pss_objid[4];
     u8 move_pp_objid[4];
     u8 fight_menu_content_spawned;
-
-    /* Message system variables */
-    struct global_message b_message[7]; // message queue depth is 5
-    u8 queue_size;
-    u8 queue_front_index;
-    u8 state;
-    SuperCallback c1;
+    u8 option_selecting_bank;
 
     /* Battle turn order variables */
-    u8 first_bank;
-    u8 second_bank;
     u8 execution_index;
-    u8 bank_hit_list[4];
-    struct move_used b_moves[2];
-    u8 repeat_move : 1;
-    u8 move_completed : 1;
-    SuperCallback c1_after_faint_check;
+    u8 bank_hit_list[BANK_MAX];
+    u8 bank_order[BANK_MAX];
+    struct move_used b_moves[BANK_MAX];
     u8 c1_prestate;
     struct switch_menu switch_main;
 
-    /* Battle details */
-    enum Effect effect[2];
-    u8 status_state;
 };
 
 enum fight_menu { OPTION_FIGHT, OPTION_POKEMON, OPTION_BAG, OPTION_RUN };
@@ -167,5 +191,7 @@ enum fight_menu { OPTION_FIGHT, OPTION_POKEMON, OPTION_BAG, OPTION_RUN };
 extern struct battle_main* battle_master;
 extern u8 bs_anim_status;
 extern void play_bmessage(void);
+extern void dprintf(const char* str, ...);
+extern bool peek_message(void);
 
 #endif /* BATTLE_STATE_H_ */

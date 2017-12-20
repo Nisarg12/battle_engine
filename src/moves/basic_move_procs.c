@@ -389,7 +389,7 @@ struct move_procs target_raise_atk_2 = {
     0,
 };
 
-//Raises target's defense 1 stage
+//Raises target's Defense 1 stage
 struct move_procs target_raise_def_1 = {
     // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
     {0, 0, 0, 0, 0, 0, 0, 0},
@@ -1360,12 +1360,25 @@ struct move_procs venom_drench = {
 };
 
 //Lowers target's accuracy 30% by 1 Stage
-struct move_procs low_tar_acc_30= {
+struct move_procs low_tar_acc_30 = {
     // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 30, 0},
     {0, 0, 0, 0, 0, 0, -1, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+//30% chance to lower target's spAtk by 1 stage
+struct move_procs low_tar_spAtk_30 = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 30, 0, 0, 0, 0},
+    {0, 0, 0, -1, 0, 0, 0, 0},
     AILMENT_NONE,
     AILMENT_NONE,
     0,
@@ -1436,4 +1449,147 @@ struct move_procs focus_energy_proc = {
     AILMENT_NONE,
     0,
     0,
+};
+
+//Lowers Target's SpD 30% by 2 Stages
+struct move_procs low_tar_SpD_30_2 = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 30, 0, 0, 0},
+    {0, 0, 0, 0, -2, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+//Raises User's Attack and Accuracy
+struct move_procs raise_user_Atk_Acc = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {100, 0, 0, 0, 0, 0, 100, 0},
+    {1, 0, 0, 0, 0, 0, 1, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+//Raises User's Attack, Defense and Accuracy
+struct move_procs raise_user_Atk_Def_Acc = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {100, 100, 0, 0, 0, 0, 100, 0},
+    {1, 1, 0, 0, 0, 0, 1, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+//Raises User's SpD, SpA and Speed
+struct move_procs raise_user_SpD_SpA_Spd = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 100, 100, 100, 0, 0, 0},
+    {0, 0, 1, 1, 1, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+//Raises User's SpA and Atk
+struct move_procs raise_user_SpA_Atk = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {100, 0, 0, 100, 0, 0, 0, 0},
+    {1, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+//Lowers Target's Accuracy 1 Stage 40%
+struct move_procs low_tar_acc_40 = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 40, 0},
+    {0, 0, 0, 0, 0, 0, -1, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+// Raises User's SpA 50% by 1 stage
+struct move_procs raise_user_SpA_50 = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 50, 0, 0, 0, 0},
+    {0, 0, 0, 1, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+// V-Create
+struct move_procs v_create = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 100, 100, 0, 100, 0, 0, 0},
+    {0, -1, -1, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+// Lowers Target's Atk and SpA
+struct move_procs low_target_atk_SpA = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {100, 0, 0, 100, 0, 0, 0, 0},
+    {-1, 0, 0, -1, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+// Lowers Target's Atk 10%
+struct move_procs low_target_atk_10 = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {10, 0, 0, 0, 0, 0, 0, 0},
+    {-1, 0, 0, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_NONE,
+    0,
+    0,
+};
+
+// Toxic Thread
+struct move_procs toxic_thread = {
+    // Atk, Def, Spd, SpA, SpD, Evn, Acc, Crt
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0,100,0, 0, 0, 0, 0},
+    {0, 0,-1, 0, 0, 0, 0, 0},
+    AILMENT_NONE,
+    AILMENT_BAD_POISON,
+    0,
+    100,
 };

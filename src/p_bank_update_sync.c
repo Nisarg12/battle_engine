@@ -131,7 +131,7 @@ bool update_bank_hit_list(u8 bank_index)
         list[0] = bank_index;
     } else if (M_HITS_TARGET(move)) {
         // Target is selected Target
-        list[0] = FOE_BANK(bank_index);
+        list[0] = (bank_index ? 0 : 2);
     } else if (M_HITS_ALLY(move)) {
         // hits ally
         if (SIDE_OF(bank_index) == PLAYER_SIDE) {

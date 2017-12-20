@@ -2,7 +2,6 @@
 #include "../battle_data/pkmn_bank.h"
 #include "../battle_data/pkmn_bank_stats.h"
 #include "../battle_data/battle_state.h"
-#include "../battle_loop/move_chain_states.h"
 
 extern void dprintf(const char * str, ...);
 extern void run_decision(void);

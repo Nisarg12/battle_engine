@@ -22,7 +22,7 @@ void stench_on_modify_move(u8 bank, u8 tbank, u16 move)
     if (M_FLINCH(move)) {
         return;
     } else {
-        battle_master->b_moves[B_MOVE_BANK(bank)].flinch = 10;
+        battle_master->b_moves[(bank)].flinch = 10;
     }
 }
 
@@ -237,7 +237,7 @@ struct b_ability b_water_absorb = {
 /* Attract and taunt immunity updated in the move's tryhits */
 void oblivious_on_update(u8 bank)
 {
-    
+
 }
 
 struct b_ability b_oblivious = {
@@ -437,7 +437,7 @@ struct b_ability b_suction_cups = {
 // Intimidate
 void intimidate_on_switch(u8 bank)
 {
-    u8 foe = FOE_BANK(bank);
+    u8 foe = (bank);
     if (B_CURRENT_HP(foe) && (!(HAS_VOLATILE(foe, VOLATILE_SUBSTITUTE) ||
         HAS_VOLATILE(foe, VOLATILE_STAT_REDUC_IMMUNE))))  {
         //enqueue_message(0, bank, STRING_INTIMIDATE, 0);
@@ -452,7 +452,7 @@ struct b_ability b_intimidate = {
 // SHADOW TAG
 void shadow_tag_on_switch(u8 bank)
 {
-    u8 foe = FOE_BANK(bank);
+    u8 foe = (bank);
     if (!(BANK_ABILITY(foe) == ABILITY_SHADOW_TAG) && !(b_pkmn_has_type(foe, TYPE_GHOST))) {
         ADD_VOLATILE(foe, VOLATILE_TRAPPED);
     }
@@ -471,7 +471,7 @@ struct b_ability b_shadow_tag = {
 void rough_skin_on_after_damage(u8 bank, u8 target, u16 move, u16 dmg, u8 ability, u16 item)
 {
     if ((bank != target) && (MAKES_CONTACT(move, target))) {
-        battle_master->b_moves[B_MOVE_BANK(bank)].after_dmg = TOTAL_HP(target) / 8;
+        battle_master->b_moves[(bank)].after_dmg = TOTAL_HP(target) / 8;
     }
 }
 
@@ -622,13 +622,13 @@ static u8 trace_ignored[] = {
 
 void trace_on_update(u8 bank)
 {
-    u8 enemy_ability = BANK_ABILITY(FOE_BANK(bank));
+    u8 enemy_ability = BANK_ABILITY((bank));
     for(u8 i = 0; i < sizeof(trace_ignored); ++i)
     {
         if(trace_ignored[i] == enemy_ability)
             return;
     }
-    set_ability(bank, FOE_BANK(bank), enemy_ability);
+    set_ability(bank, (bank), enemy_ability);
 }
 
 struct b_ability b_trace =
@@ -747,7 +747,7 @@ struct b_ability b_trace =
 // ADAPTABILITY
 void adaptability_on_modify_move(u8 bank, u8 t_bank, u16 move)
 {
-   battle_master->b_moves[B_MOVE_BANK(bank)].stab = 200;
+   battle_master->b_moves[(bank)].stab = 200;
 }
 
 struct b_ability b_adaptability = {
@@ -903,10 +903,7 @@ struct b_ability b_sand_rush = {
 // WONDER SKIN
 u16 wonder_skin_on_accuracy(u8 bank, u16 stat)
 {
-    if (BANK_ABILITY(FOE_BANK(bank)) == ABILITY_WONDER_SKIN) {
-        if (B_MOVE_IS_STATUS(FOE_BANK(bank)))
-            return NUM_MOD(B_MOVE_ACCURACY(FOE_BANK(bank)), 50);
-    }
+
     return stat;
 }
 
@@ -918,7 +915,7 @@ struct b_ability b_wonder_skin = {
 // ANALYTIC
 void analytic_on_base_power(u8 bank, u16 move)
 {
-    if (bank == battle_master->second_bank)
+    if (bank == 0)
         B_MOVE_POWER(bank) = NUM_MOD(B_MOVE_POWER(bank), 130);
 }
 
@@ -1021,7 +1018,7 @@ struct b_ability b_sap_sipper = {
 // PRANKSTER
 s8 prankster_on_priority_mod(u8 bank, u16 move)
 {
-    if (battle_master->b_moves[B_MOVE_BANK(bank)].category == MOVE_STATUS) {
+    if (battle_master->b_moves[(bank)].category == MOVE_STATUS) {
         ADD_VOLATILE(bank, VOLATILE_PRANKSTERED);
         return 1;
     }
@@ -1032,7 +1029,7 @@ s8 prankster_on_priority_mod(u8 bank, u16 move)
 void prankster_on_modify_move(u8 bank, u8 tbank, u16 move)
 {
     if (B_MOVE_IS_STATUS(bank))
-        B_IS_PRANKSTER(bank) = 1;
+        ACTION_PRANKSTER = 1;
 }
 
 struct b_ability b_prankster = {
@@ -1067,7 +1064,7 @@ struct b_ability b_sand_force = {
 void iron_barbs_on_after_damage(u8 bank, u8 target, u16 move, u16 dmg, u8 ability, u16 item)
 {
     if ((bank != target) && (MAKES_CONTACT(move, target))) {
-        battle_master->b_moves[B_MOVE_BANK(bank)].after_dmg = TOTAL_HP(target) / 8;
+        battle_master->b_moves[(bank)].after_dmg = TOTAL_HP(target) / 8;
     }
 }
 
@@ -1768,7 +1765,7 @@ struct b_ability b_comatose = {
 u8 queenly_majesty_on_tryhit(u8 bank, u8 t_bank, u16 move)
 {
     if (SIDE_OF(bank) != SIDE_OF(t_bank)) {
-        if (battle_master->b_moves[B_MOVE_BANK(bank)].priority != 0)
+        if (battle_master->b_moves[(bank)].priority != 0)
             return false;
     }
     return true;
@@ -1783,7 +1780,7 @@ struct b_ability b_queenly_majesty = {
 void innards_out_on_after_damage(u8 bank, u8 target, u16 move, u16 dmg, u8 ability, u16 item)
 {
     if ((bank != target) && (!B_CURRENT_HP(target))) {
-        battle_master->b_moves[B_MOVE_BANK(bank)].after_dmg = dmg;
+        battle_master->b_moves[(bank)].after_dmg = dmg;
     }
 }
 
@@ -1817,8 +1814,8 @@ u16 fluffy_on_damage(u8 bank, u8 tbank, u16 move, u16 dmg, u8 ability, u16 item)
     if (bank == tbank)
         return dmg;
     /* 50% more damage from fire moves */
-    if ((battle_master->b_moves[B_MOVE_BANK(bank)].type[0] == MTYPE_FIRE) ||
-        (battle_master->b_moves[B_MOVE_BANK(bank)].type[1] == MTYPE_FIRE)) {
+    if ((battle_master->b_moves[(bank)].type[0] == MTYPE_FIRE) ||
+        (battle_master->b_moves[(bank)].type[1] == MTYPE_FIRE)) {
         dmg = ((dmg * 150) / 100);
     }
     /* half damage from contact moves */
@@ -1837,7 +1834,7 @@ struct b_ability b_fluffy = {
 u8 dazzling_on_tryhit(u8 bank, u8 t_bank, u16 move)
 {
     if (SIDE_OF(bank) != SIDE_OF(t_bank)) {
-        if (battle_master->b_moves[B_MOVE_BANK(bank)].priority != 0)
+        if (battle_master->b_moves[(bank)].priority != 0)
             return false;
     }
     return true;

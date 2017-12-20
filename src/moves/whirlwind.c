@@ -2,10 +2,9 @@
 #include "../battle_data/pkmn_bank.h"
 #include "../battle_data/pkmn_bank_stats.h"
 #include "../battle_data/battle_state.h"
-#include "../battle_loop/move_chain_states.h"
+#include "../battle_events/battle_events.h"
 
 extern void dprintf(const char * str, ...);
-extern void run_decision(void);
 
 u8 whirlwind_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
@@ -23,7 +22,6 @@ u8 whirlwind_on_effect_cb(u8 user, u8 src, u16 move, struct anonymous_callback* 
 {
     if (user != src) return true;
     // exit battle
-    set_callback1(run_decision);
-    super.multi_purpose_state_tracker = S_END_BATTLE;
+    prepend_action(user, NULL, ActionRun, EventEndBattle);
     return 0;
 }

@@ -7,7 +7,7 @@ extern void dprintf(const char * str, ...);
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 extern bool b_pkmn_set_type(u8 bank, enum PokemonType type);
 extern bool b_pkmn_has_type(u8 bank, enum PokemonType type);
-extern void set_attack_battle_master(u8 bank, u8 index, s8 priority);
+extern void set_attack_bm_inplace(u8 bank, u8 index, s8 priority);
 
 
 // Secret power
@@ -85,7 +85,7 @@ u8 nature_power_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* 
     } else {
         CURRENT_MOVE(user) = MOVE_TRI_ATTACK;
     }
-    set_attack_battle_master(user, B_MOVE_BANK(user), MOVE_PRIORITY(CURRENT_MOVE(user)));
+    set_attack_bm_inplace(user, (user), MOVE_PRIORITY(CURRENT_MOVE(user)));
     LAST_MOVE(user) = MOVE_NATURE_POWER;
     enqueue_message(CURRENT_MOVE(user), user, STRING_ATTACK_USED, 0);
     return true;

@@ -433,6 +433,6 @@ void twister_on_damage(u8 user, u8 src, u16 move, struct anonymous_callback* acb
 void triple_kick_on_base_power(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return;
-    B_MOVE_POWER(user) = (10 * battle_master->b_moves[B_MOVE_BANK(user)].hit_counter);
+    B_MOVE_POWER(user) = (10 * battle_master->b_moves[(user)].hit_counter);
     dprintf("current power is %d\n", B_MOVE_POWER(user));
 }

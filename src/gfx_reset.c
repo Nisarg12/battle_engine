@@ -1,5 +1,8 @@
 #include <pokeagb/pokeagb.h>
 #include "battle_text/battle_textbox_gfx.h"
+#include "battle_data/pkmn_bank_stats.h"
+#include "battle_slide_in_data/battle_obj_sliding.h"
+extern void CpuFastSet(void*, void*, u32);
 
 /* This vblank overlaps the tilemap from show_message with the battle box */
 void vblank_cb_merge_tbox()
@@ -16,6 +19,28 @@ void vblank_cb_merge_tbox()
         if (!*(dst + i))
             *(dst + i) = *(src + i);
 	}
+}
+
+void vblank_cb_merge_tbox_sliding()
+{
+    gpu_sprites_upload();
+    copy_queue_process();
+    gpu_pal_upload();
+    u16 i;
+    u8 **bg0_map = (u8**)0x030008EC;
+    u8 *dst = (u8 *)(*bg0_map);
+    u8 *src = (u8 *)battle_textboxMap;//(u32 *)0x0600F800;
+    for (i = 0; i < 2048; i++) {
+    // only merge if there is no text on this tile
+        if (!*(dst + i))
+            *(dst + i) = *(src + i);
+	}
+    if (super.multi_purpose_state_tracker == 7) {
+        bs_env_windows->bot_side -= 3;
+        bs_env_windows->top_side += 3;
+        bs_env_windows->wintop -= 1;
+        bs_env_windows->winbot += 1;
+    }
 }
 
 /* This vblank overlaps the tilemap from move selection with the battle box */
@@ -35,6 +60,8 @@ void vblank_cb_merge_move_select()
     }
 }
 
+
+
 void vblank_cb_no_merge()
 {
 	gpu_sprites_upload();
@@ -45,12 +72,21 @@ void vblank_cb_no_merge()
 
 void c2_battle()
 {
-    //tilemaps_sync();
     obj_sync_superstate();
     objc_exec();
     process_palfade();
     task_exec();
-    //tilemaps_sync();
+    // merge textbox and text tile maps
+    remoboxes_upload_tilesets();
+}
+
+void c2_switch_menu()
+{
+    obj_sync_superstate();
+    objc_exec();
+    process_palfade();
+    task_exec();
+    tilemaps_sync();
     // merge textbox and text tile maps
     remoboxes_upload_tilesets();
 }
@@ -111,7 +147,8 @@ void setup()
     obj_and_aux_reset_all();
     gpu_tile_obj_tags_reset();
     // VRAM clear
-    memset((void *)(ADDR_VRAM), 0x0, 0x10000);
+    u32 set = 0;
+    CpuFastSet((void*)&set, (void*)ADDR_VRAM, CPUModeFS(0x10000, CPUFSSET));
     // tasks
     malloc_init((void*)0x2000000, 0x1C000);
     tasks_init();

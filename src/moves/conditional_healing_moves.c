@@ -185,3 +185,13 @@ u8 heal_bell_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb
     }
     return success;
 }
+
+u8 heal_pulse_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (user != src) return true;
+    u8 target_bank = TARGET_OF(user);
+    if (TOTAL_HP(target_bank) == B_CURRENT_HP(target_bank)) {
+        return false;
+    }
+    return true;
+}

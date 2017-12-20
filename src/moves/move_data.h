@@ -256,7 +256,7 @@ extern u8 mean_look_on_effect(u8 user, u8 src, u16 move, struct anonymous_callba
 extern void dragon_rage_on_dmg(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 blizzard_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 synthesis_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
-extern u8 growth_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 growth_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 ancient_power_on_modify_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern void twister_on_damage(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern void triple_kick_on_base_power(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
@@ -264,6 +264,13 @@ extern u8 leech_seed_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callb
 extern u8 focus_energy_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern void focus_punch_before_turn(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern void beak_blast_before_turn(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 heart_swap_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 pollen_puff_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 autotomize_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 heal_pulse_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 self_destruct_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 after_you_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 quash_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 
 
 /* User stats */
@@ -296,6 +303,13 @@ extern struct move_procs user_raise_spDef_2;
 extern struct move_procs user_raise_spd_2;
 extern struct move_procs user_raise_acc_2;
 extern struct move_procs raise_user_Def_SpD;
+extern struct move_procs raise_user_Atk_Acc;
+extern struct move_procs raise_user_Atk_Def_Acc;
+extern struct move_procs raise_user_SpD_SpA_Spd;
+extern struct move_procs raise_user_SpA_Atk;
+extern struct move_procs raise_user_SpA_50;
+
+
 /* Target stats */
 extern struct move_procs target_lower_atk_1;
 extern struct move_procs target_lower_def_1;
@@ -316,6 +330,11 @@ extern struct move_procs dec_SpA_50_procs;
 extern struct move_procs low_targ_atk_def;
 extern struct move_procs low_tar_acc_30;
 extern struct move_procs low_tar_evn_1;
+extern struct move_procs low_tar_SpD_30_2;
+extern struct move_procs low_tar_acc_40;
+extern struct move_procs low_target_atk_SpA;
+extern struct move_procs low_target_atk_10;
+
 
 extern struct move_procs target_raise_atk_1;
 extern struct move_procs target_raise_def_1;
@@ -383,5 +402,9 @@ extern struct move_procs venom_drench;
 extern struct move_procs bug_buzz_procs;
 extern struct move_procs charge_beam_procs;
 extern struct move_procs focus_energy_proc;
+extern struct move_procs focus_energy_proc;
+extern struct move_procs low_tar_spAtk_30;
+extern struct move_procs v_create;
+extern struct move_procs toxic_thread;
 
 #endif /* MOVE_DATA_H_ */

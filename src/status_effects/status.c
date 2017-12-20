@@ -4,7 +4,6 @@
 #include "../battle_data/battle_state.h"
 #include "../moves/moves.h"
 #include "status.h"
-#include "../battle_loop/move_chain_states.h"
 
 extern u16 rand_range(u16, u16);
 extern void status_graphical_update(u8 bank, enum Effect status);
@@ -13,8 +12,6 @@ extern void do_damage(u8 bank_index, u16 dmg);
 extern u16 get_damage(u8 attacker, u8 defender, u16 move);
 extern void dprintf(const char * str, ...);
 extern void hpbar_apply_dmg(u8 task_id);
-extern bool peek_message(void);
-extern void run_move(void);
 extern void ailment_decode(u8 bank, u8 ailment);
 
 /* Sleep Related */
@@ -235,8 +232,8 @@ u8 confusion_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback
 			B_MOVE_IGNORING_ABILITIES(user) = true;
 			B_MOVE_CATEGORY(user) = MOVE_PHYSICAL;
 			B_MOVE_CAN_CRIT(user) = false;
-			B_MOVE_WILL_CRIT_SET(user, 0);
-			battle_master->b_moves[B_MOVE_BANK(user)].hit_times = 0;
+			B_MOVE_WILL_CRIT(user) = false;
+			battle_master->b_moves[(user)].hit_times = 0;
 			u16 dmg = get_damage(user, user, CURRENT_MOVE(user));
 			do_damage(user, MAX(1, dmg));
 		} else {

@@ -196,37 +196,33 @@ u16 sandstorm_stat_mod(u8 user, u8 src, u16 stat_id, struct anonymous_callback* 
     }
 }
 
-u16 sandstorm_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+
+u16 sandstorm_on_residual_buffet(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (acb->data_ptr) {
         acb->data_ptr = 0;
     } else {
         acb->data_ptr = 1;
-        return true;
     }
     if (acb->duration == 0) {
-        enqueue_message(NULL, NULL, STRING_SANDSTORM_END, NULL);
+        if (acb->data_ptr)
+            enqueue_message(NULL, NULL, STRING_SANDSTORM_END, NULL);
     } else {
-        enqueue_message(NULL, NULL, STRING_SANDSTORM_RAGE, NULL);
+        if (acb->data_ptr)
+            enqueue_message(NULL, NULL, STRING_SANDSTORM_RAGE, NULL);
+        if (b_pkmn_has_type(user, MTYPE_ROCK) || b_pkmn_has_type(user, MTYPE_STEEL) || b_pkmn_has_type(user, MTYPE_GROUND))
+            return true;
+        if (HAS_VOLATILE(user, VOLATILE_DIVE) || HAS_VOLATILE(user, VOLATILE_DIG))
+            return true;
+        enqueue_message(NULL, user, STRING_SANDSTORM_BUFFET, MOVE_SANDSTORM);
+        do_damage(user, (TOTAL_HP(user) / 16));
     }
-    return true;
-}
-
-u16 sandstorm_on_residual_buffet(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
-{
-    if (b_pkmn_has_type(user, MTYPE_ROCK) || b_pkmn_has_type(user, MTYPE_STEEL) || b_pkmn_has_type(user, MTYPE_GROUND))
-        return true;
-    if (HAS_VOLATILE(user, VOLATILE_DIVE) || HAS_VOLATILE(user, VOLATILE_DIG))
-        return true;
-    enqueue_message(NULL, user, STRING_SANDSTORM_BUFFET, MOVE_SANDSTORM);
-    do_damage(user, (TOTAL_HP(user) / 16));
     return true;
 }
 
 void sandstorm_init_effect()
 {
     battle_master->field_state.is_sandstorm = true;
-    add_callback(CB_ON_RESIDUAL, 2, 5, NULL, (u32)sandstorm_on_residual);
     add_callback(CB_ON_RESIDUAL, 1, 5, NULL, (u32)sandstorm_on_residual_buffet);
     add_callback(CB_ON_STAT_MOD, 10, 5, NULL, (u32)sandstorm_stat_mod);
     enqueue_message(NULL, NULL, STRING_SANDSTORM_KICKED, NULL);
@@ -235,44 +231,38 @@ void sandstorm_init_effect()
 void clear_sandstorm()
 {
     battle_master->field_state.is_sandstorm = false;
-    delete_callback((u32)sandstorm_on_residual);
     delete_callback((u32)sandstorm_on_residual_buffet);
     delete_callback((u32)sandstorm_stat_mod);
 }
 
 
 /* hail */
-u16 hail_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+u16 hail_on_residual_buffet(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (acb->data_ptr) {
         acb->data_ptr = 0;
     } else {
         acb->data_ptr = 1;
-        return true;
     }
     if (acb->duration == 0) {
-        enqueue_message(NULL, NULL, STRING_RAIN_STOPPED, MOVE_HAIL);
+        if (acb->data_ptr)
+            enqueue_message(NULL, NULL, STRING_RAIN_FALLING, MOVE_HAIL);
     } else {
-        enqueue_message(NULL, NULL, STRING_RAIN_FALLING, MOVE_HAIL);
+        if (acb->data_ptr)
+            enqueue_message(NULL, NULL, STRING_RAIN_STOPPED, MOVE_HAIL);
+        if (b_pkmn_has_type(user, MTYPE_ICE))
+            return true;
+        if (HAS_VOLATILE(user, VOLATILE_DIVE) || HAS_VOLATILE(user, VOLATILE_DIG))
+            return true;
+        enqueue_message(NULL, user, STRING_SANDSTORM_BUFFET, MOVE_HAIL);
+        do_damage(user, (TOTAL_HP(user) / 16));
     }
-    return true;
-}
-
-u16 hail_on_residual_buffet(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
-{
-    if (b_pkmn_has_type(user, MTYPE_ICE))
-        return true;
-    if (HAS_VOLATILE(user, VOLATILE_DIVE) || HAS_VOLATILE(user, VOLATILE_DIG))
-        return true;
-    enqueue_message(NULL, user, STRING_SANDSTORM_BUFFET, MOVE_HAIL);
-    do_damage(user, (TOTAL_HP(user) / 16));
     return true;
 }
 
 void hail_init_effect()
 {
     battle_master->field_state.is_hail = true;
-    add_callback(CB_ON_RESIDUAL, 2, 5, NULL, (u32)hail_on_residual);
     add_callback(CB_ON_RESIDUAL, 1, 5, NULL, (u32)hail_on_residual_buffet);
     enqueue_message(0, 0, STRING_RAINING, MOVE_HAIL);
 }
@@ -281,7 +271,6 @@ void clear_hail()
 {
     battle_master->field_state.is_hail = false;
     delete_callback((u32)hail_on_residual_buffet);
-    delete_callback((u32)hail_on_residual);
 }
 
 

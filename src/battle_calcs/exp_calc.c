@@ -10,7 +10,7 @@ extern void dprintf(const char * str, ...);
 
 u32 calc_exp(u8 fainted, u8 reciever)
 {
-    u8 trainer_mon = (battle_type_flags != BATTLE_FLAG_WILD) ? 150 : 100;
+    u8 trainer_mon = (battle_type_flag != BATTLE_MODE_WILD) ? 150 : 100;
     // base species recieve incase of species index change
     u16 base_yield = pokemon_getattr(p_bank[fainted]->this_pkmn, REQUEST_SPECIES, NULL);
     base_yield = pokemon_base_stats[base_yield].xp_yield;

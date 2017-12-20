@@ -6,7 +6,7 @@
 extern void dprintf(const char * str, ...);
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 extern u8 move_pp_count(u16 move_id, u8 bank);
-extern void set_attack_battle_master(u8 bank, u8 index, s8 priority);
+extern void set_attack_bm_inplace(u8 bank, u8 index, s8 priority);
 extern bool knows_move(u16 move_id, u8 bank);
 
 const static u16 encore_disallow[] = {
@@ -66,7 +66,7 @@ u8 encore_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
     // fail if encore active on target already
     if (has_callback_src((u32)encore_on_disable, target)) return false;
     CURRENT_MOVE(target) = LAST_MOVE(target);
-    set_attack_battle_master(target, B_MOVE_BANK(target), 0);
+    set_attack_bm_inplace(target, (target), 0);
     add_callback(CB_ON_RESIDUAL, 0, 3, target, (u32)encore_on_residual);
     add_callback(CB_ON_DISABLE_MOVE, 0, 3, target, (u32)encore_on_disable);
     enqueue_message(NULL, target, STRING_RECIEVED_ENCORE, NULL);
@@ -103,7 +103,7 @@ u8 taunt_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* ac
 {
     if (user != TARGET_OF(src)) return true;
     enqueue_message(CURRENT_MOVE(user), user, STRING_ATTACK_USED, 0);
-    return (!B_MOVE_IS_STATUS(move));
+    return (!B_MOVE_IS_STATUS(user));
 }
 
 u8 taunt_on_disable(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
@@ -130,13 +130,6 @@ u8 taunt_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 
 
 /* Disable */
-u8 disable_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
-{
-    if (user != TARGET_OF(src)) return true;
-    enqueue_message(CURRENT_MOVE(user), user, STRING_ATTACK_USED, 0);
-    return false;
-}
-
 bool disable_on_disable_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 {
     if (user != src) return true;
@@ -145,6 +138,16 @@ bool disable_on_disable_move(u8 user, u8 src, u16 move, struct anonymous_callbac
         // Obviously not display the message to the AI.
         if (!SIDE_OF(user))
             enqueue_message(move, user, STRING_CANT_REASON, MOVE_DISABLE);
+        return false;
+    }
+    return true;
+}
+
+u8 disable_on_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
+{
+    if (user != TARGET_OF(src)) return true;
+    if (has_callback_src((u32)disable_on_disable_move, user)) {
+        enqueue_message(CURRENT_MOVE(user), user, STRING_ATTACK_USED, 0);
         return false;
     }
     return true;

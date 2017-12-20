@@ -131,7 +131,7 @@ struct move_procs {
 #define M_HITS_ADJ(move) ((moves[move].m_flags) & FLAG_HITS_ADJACENT)
 #define M_HITS_ALLY_OR_SELF(move) ((moves[move].m_flags) & FLAG_HITS_ALLY_OR_SELF)
 
-#define MAKES_CONTACT(move, bank) (IS_CONTACT(move) & (!battle_master->b_moves[(bank == battle_master->first_bank) ? 0 : 1].remove_contact))
+#define MAKES_CONTACT(move, bank) (IS_CONTACT(move) & (!battle_master->b_moves[bank].remove_contact))
 #define DEF_CATEGORY(move) ((CAT_OVERRIDE(move)) ? ((IS_MOVE_PHYSICAL(move) ? MOVE_SPECIAL : MOVE_PHYSICAL)) : MOVE_CATEGORY(move))
 #define MOVE_SECONDARY_STATUS_CHANCE(move, bank) moves[move].procs->secondary_status_chance[SIDE_OF(bank)]
 #define MOVE_SECONDARY_STATUS(move, bank) moves[move].procs->secondary_status[SIDE_OF(bank)]

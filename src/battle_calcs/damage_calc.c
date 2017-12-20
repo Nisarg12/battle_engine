@@ -14,7 +14,7 @@ u16 type_effectiveness_mod(u8 attacker, u8 defender, u16 move)
 {
     u16 percent = 100;
     // for each type of the attacker's move
-    for (u8 i = 0; i < sizeof(battle_master->b_moves[B_MOVE_BANK(attacker)].type); i++) {
+    for (u8 i = 0; i < sizeof(battle_master->b_moves[(attacker)].type); i++) {
         // get the type effectiveness for each type of the defender
         for (u8 j = 0; j < sizeof(p_bank[defender]->b_data.type); j++) {
             if ((B_MOVE_TYPE(attacker, i) != MTYPE_EGG) && (B_PKMN_TYPE(defender, j) != MTYPE_EGG)) {
@@ -158,8 +158,10 @@ u16 modify_damage(u16 base_damage, u8 attacker, u8 defender, u16 move)
 
     // Targets mod
     u8 targets_mod;
-    switch (battle_type_flags) {
-        case BATTLE_FLAG_PARTNER:
+    switch (battle_type_flag) {
+        case BATTLE_MODE_WILD_DOUBLE:
+        case BATTLE_MODE_TRAINER_DOUBLE:
+        case BATTLE_MODE_PARTNER:
             /* TODO : Check if other targets are alive & move is spread */
             targets_mod = 75;
             break;
@@ -180,6 +182,7 @@ u16 modify_damage(u16 base_damage, u8 attacker, u8 defender, u16 move)
             B_MOVE_WILL_CRIT(attacker) = true;
             modded_base = NUM_MOD(modded_base, 150);
         }
+        p_bank[attacker]->b_data.crit_mod -= MOVE_CRIT(move);
     }
 
     // random factor
@@ -236,7 +239,7 @@ s16 get_damage(u8 attacker, u8 defender, u16 move)
 
     if (!return_now) {
         if (IS_OHKO(move)) {
-            battle_master->b_moves[B_MOVE_BANK(attacker)].effectiveness = TE_OHKO;
+            battle_master->b_moves[(attacker)].effectiveness = TE_OHKO;
             dmg = (TOTAL_HP(defender));
             return_now = true;
         }

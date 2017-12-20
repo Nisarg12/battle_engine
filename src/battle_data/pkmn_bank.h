@@ -10,10 +10,6 @@
 #define BANK_MAX 4
 #define MTYPES_MAX 19
 
-// executed right before using a move. bm_cb(user_bank)
-typedef void (*BeforeMoveCallback)(u8);
-typedef void (*DamageCallback)(u8, u8);
-
 
 enum StatusAilments {
     AILMENT_NONE,
@@ -151,6 +147,7 @@ struct local_battler_data {
     u8 last_move_failed : 1;
     u8 is_active_bank : 1;
 
+    u8 flinch;
     u8 my_target;
     u8 pp_index;
     u16 last_move;

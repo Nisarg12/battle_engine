@@ -1,11 +1,10 @@
 #include <pokeagb/pokeagb.h>
-#include "../../../battle_data/pkmn_bank.h"
-#include "../../../battle_data/pkmn_bank_stats.h"
-#include "../../../battle_data/battle_state.h"
-#include "../../../moves/moves.h"
-#include "../../move_chain_states.h"
-#include "../../../abilities/battle_abilities.h"
-#include "../../../status_effects/status.h"
+#include "../battle_data/pkmn_bank.h"
+#include "../battle_data/pkmn_bank_stats.h"
+#include "../battle_data/battle_state.h"
+#include "../moves/moves.h"
+#include "../abilities/battle_abilities.h"
+#include "status.h"
 
 extern u16 rand_range(u16, u16);
 extern void dprintf(const char * str, ...);
@@ -20,45 +19,29 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
     s8* stat_stored;
     switch (stat_id + 1) {
         case STAT_ATTACK:
-            {
             stat_stored = &(p_bank[bank]->b_data.attack);
             break;
-            }
         case STAT_DEFENSE:
-            {
             stat_stored = &(p_bank[bank]->b_data.defense);
             break;
-            }
         case STAT_SPEED:
-            {
             stat_stored = &(p_bank[bank]->b_data.speed);
             break;
-            }
         case STAT_SPECIAL_ATTACK:
-            {
             stat_stored = &(p_bank[bank]->b_data.sp_atk);
             break;
-            }
         case STAT_SPECIAL_DEFENSE:
-            {
             stat_stored = &(p_bank[bank]->b_data.sp_def);
             break;
-            }
         case STAT_EVASION: // evasion
-            {
             stat_stored = &(p_bank[bank]->b_data.evasion);
             break;
-            }
         case STAT_ACCURACY: // accuracy
-            {
             stat_stored = &(p_bank[bank]->b_data.accuracy);
             break;
-            }
         case STAT_CRIT: // crit
-            {
             stat_stored = &(p_bank[bank]->b_data.crit_mod);
             break;
-            }
         default:
             return;
     };
@@ -109,40 +92,6 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
         default:
             break;
     };
-}
-
-void move_procs_perform(u8 bank_index, u16 move)
-{
-    // back up cbs
-    u32* old_execution_array = push_callbacks();
-    u8 old_index = CB_EXEC_INDEX;
-    // Stat modifying callbacks
-    build_execution_order(CB_ON_BEFORE_STAT_MOD);
-    battle_master->executing = true;
-    while (battle_master->executing) {
-        pop_callback(bank_index, NULL);
-    }
-    restore_callbacks(old_execution_array);
-    CB_EXEC_INDEX = old_index;
-
-	/* first step is to apply user boosts */
-	for (u8 i = 0; i < 8; i++) {
-		if (B_USER_STAT_MOD_CHANCE(bank_index, i) >= rand_range(0, 100)) {
-			stat_boost(bank_index, i, B_USER_STAT_MOD_AMOUNT(bank_index, i));
-			B_USER_STAT_MOD_CHANCE(bank_index, i) = 0;
-            return;
-		}
-	}
-
-	/* second step is to apply target boosts */
-	for (u8 i = 0; i < 8; i++) {
-		if (B_TARGET_STAT_MOD_CHANCE(bank_index, i) >= rand_range(0, 100)) {
-			stat_boost(TARGET_OF(bank_index), i, B_TARGET_STAT_MOD_AMOUNT(bank_index, i));
-			B_TARGET_STAT_MOD_CHANCE(bank_index, i) = 0;
-            return;
-		}
-	}
-    super.multi_purpose_state_tracker = S_SECONDARY_ROLL_AILMENTS;
 }
 
 
@@ -279,23 +228,4 @@ void ailment_decode(u8 bank, u8 ailment)
         p_bank[bank]->b_data.status = AILMENT_PARALYZE;
     else if (ailment & (1<<7))
         p_bank[bank]->b_data.status = AILMENT_BAD_POISON;
-}
-
-
-void status_procs_perform(u8 bank_index)
-{
-	if (B_AILMENT_PROCS_CHANCE_USER(bank_index) >= rand_range(1, 100)) {
-		// apply status user
-		B_AILMENT_PROCS_CHANCE_USER(bank_index) = 0;
-		set_status(bank_index, B_AILMENT_PROCS_USER(bank_index));
-		return;
-	}
-
-	if (B_AILMENT_PROCS_CHANCE_TARGET(bank_index) >= rand_range(1, 100)) {
-		// apply status target
-		B_AILMENT_PROCS_CHANCE_TARGET(bank_index) = 0;
-		set_status(TARGET_OF(bank_index), B_AILMENT_PROCS_TARGET(bank_index));
-		return;
-	}
-	super.multi_purpose_state_tracker = S_AFTER_MOVE_SECONDARY;
 }
