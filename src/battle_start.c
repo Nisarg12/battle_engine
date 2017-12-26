@@ -65,11 +65,26 @@ void start_wild_battle()
         }
         case 4:
         {
-            for (u8 i = 0; i < BANK_MAX; i++) {
-                if (ACTIVE_BANK(i)) {
-                    u8 ability = p_bank[i]->b_data.ability;
-                    if (abilities[ability].on_start)
+            u8 active_banks[4] = {0x3F, 0x3F, 0x3F, 0x3F};
+            u8 index = 0;
+            for (u8 i = 0 ; i < BANK_MAX; i++) {
+                if (p_bank[i]->b_data.is_active_bank) {
+                    active_banks[index] = i;
+                    index++;
+                }
+            }
+            extern void sort_active_banks(u8* active_banks, u8 index);
+            sort_active_banks(&active_banks[0], index);
+
+            for (u8 i = 0; i < index; i++) {
+                dprintf("%d bank on_start being checked\n", active_banks[i]);
+                if (ACTIVE_BANK(active_banks[i])) {
+                    u8 ability = p_bank[active_banks[i]]->b_data.ability;
+                    dprintf("ability for bank %d is %d\n", active_banks[i], ability);
+                    if (abilities[ability].on_start) {
+                        dprintf("trying to run a callback\n");
                         abilities[ability].on_start(NULL, i, NULL, NULL);
+                    }
                 }
             }
             super.multi_purpose_state_tracker = 0;

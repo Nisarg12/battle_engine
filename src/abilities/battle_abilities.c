@@ -31,6 +31,7 @@ void drizzle_on_start(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
     if (HAS_VOLATILE(VOLATILE_DRIZZLE, src)) return;
     ADD_VOLATILE(VOLATILE_DRIZZLE, src);
     if (battle_master->field_state.is_raining) return;
+    dprintf("set weather to rain\n");
     set_weather(WEATHER_RAIN);
 }
 
@@ -263,6 +264,13 @@ u8 vitalspirit_on_status(u8 user, u8 source, u16 ailment , struct anonymous_call
 // UNBURDEN
 
 // HEATPROOF
+void heatproof_on_base_power(u8 user, u8 source, u16 move, struct anonymous_callback* acb)
+{
+    if (TARGET_OF(user) != source) return;
+    if (B_MOVE_HAS_TYPE (user, MTYPE_FIRE)) {
+        B_MOVE_POWER(user) = B_MOVE_POWER(user) >> 1;
+    }
+}
 
 // Simple
 u8 simple_on_stat_boost_mod(u8 user, u8 source, u16 stat_id, struct anonymous_callback* acb)
