@@ -1,20 +1,21 @@
 #include <pokeagb/pokeagb.h>
 #include "../battle_data/pkmn_bank.h"
+#include "../battle_data/pkmn_bank_stats.h"
 #include "../battle_data/battle_state.h"
 
+
 extern u8 spawn_pkmn_backsprite_obj_slot(u8 bank, u16 tag);
+extern void dprintf(const char * str, ...);
+
 
 static const struct RotscaleFrame shrink_grow[] = {
-    {-200, -200, -46, 1, 0},
-    {20, 20, 0, 10, 0}, // 30 right
+    {-200, -200, 0, 1, 0},
+    {20, 20, 0, 10, 0},
     {0x7FFF, 0, 0, 0, 0}
 };
-static const struct RotscaleFrame (*shrink_grow_ptr)[] = (const struct RotscaleFrame(*)[])&shrink_grow;
 
-void pkmn_fade_color_normal(struct Object* obj){
+static const struct RotscaleFrame* shrink_grow_ptr[] = {shrink_grow};
 
-
-}
 
 void pkmn_sendingout_objc(struct Object* obj)
 {
@@ -22,8 +23,6 @@ void pkmn_sendingout_objc(struct Object* obj)
     if (obj->priv[5] < obj->pos1.y) {
         if ((obj->pos1.y - 6) < obj->priv[5]) {
             obj->pos1.y = obj->priv[5];
-           // obj->callback = pkmn_fade_color_normal;
-
         } else {
             obj->pos1.y -= 6;
         }
@@ -34,20 +33,20 @@ void pkmn_sendingout_objc(struct Object* obj)
     if (!obj->priv[0]) {
         REG_BLDCNT = 0;
         obj->callback = oac_nullsub;
-        obj->final_oam.affine_mode = 0;
+        obj->final_oam.affine_mode = 1;
         bs_anim_status = 0;
         return;
     }
     REG_BLDY = obj->priv[0];
     obj->priv[0]--;
 }
-extern void dprintf(const char * str, ...);
+
 u8 send_out_backsprite(u8 bank)
 {
     // send out pokemon's backsprite based on bank
     affine_reset_all();
     u8 objid = spawn_pkmn_backsprite_obj_slot(bank, 0x810);
-    objects[objid].rotscale_table = (const struct RotscaleFrame(**)[])&shrink_grow_ptr;
+    objects[objid].rotscale_table = shrink_grow_ptr;
     objects[objid].final_oam.affine_mode = 1;
     objects[objid].callback = pkmn_sendingout_objc;
     objects[objid].priv[0] = 10;
@@ -66,9 +65,9 @@ u8 send_out_backsprite(u8 bank)
 
 static const struct RotscaleFrame spin[] = {
     {0, 0, 0x00, 8, 0x0}, // 8 frame wait
-    {0, 0, 10, 3, 0x0}, // 10 frame right
-    {0, 0, 20, 4, 0x0}, // 20 frame right
-    {0, 0, 30, 255, 0x0}, // 30 frame right
+    {0, 0, 10, 3, 0x0}, // 10, 3 frames
+    {0, 0, 20, 4, 0x0}, // 20, 4 frames
+    {0, 0, 30, 255, 0x0}, // 30, 255 frame
     {0x7FFF, 0x0, 0x0, 0x0, 0x0} // end
 };
 static const struct RotscaleFrame (*spin_ptr)[] = (const struct RotscaleFrame(*)[])&spin;

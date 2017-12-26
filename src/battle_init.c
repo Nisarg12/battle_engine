@@ -29,9 +29,13 @@ void init_battle_elements()
 
 void nullify_object_trackers()
 {
-    // initialization finished, set c1 option selection
-    for(u8 i = 0; i < 10; ++i) {
+    // set objids to 0x3f, symbolizing no valid objid set.
+    for (u8 i = 0; i < 10; ++i) {
         battle_master->switch_main.type_objid[i] = 0x3F;
+        if (i < 6)
+            battle_master->switch_main.icon_objid[i] = 0x3F;
+        if (i < 3)
+            battle_master->switch_main.slider_objid[i] = 0x3F;
     }
 
     battle_master->battle_cursor.objid_mv_crsr[0] = 0x3F;

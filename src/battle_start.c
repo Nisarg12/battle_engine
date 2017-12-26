@@ -4,6 +4,7 @@
 #include "battle_slide_in_data/battle_obj_sliding.h"
 #include "battle_data/battle_state.h"
 #include "battle_text/battle_textbox_gfx.h"
+#include "abilities/battle_abilities.h"
 
 extern void update_pbank(u8 bank, struct update_flags* flags);
 extern void player_throwball_and_moveout_scene(struct Object*);
@@ -64,6 +65,13 @@ void start_wild_battle()
         }
         case 4:
         {
+            for (u8 i = 0; i < BANK_MAX; i++) {
+                if (ACTIVE_BANK(i)) {
+                    u8 ability = p_bank[i]->b_data.ability;
+                    if (abilities[ability].on_start)
+                        abilities[ability].on_start(NULL, i, NULL, NULL);
+                }
+            }
             super.multi_purpose_state_tracker = 0;
             option_selection(PLAYER_SINGLES_BANK);
             break;

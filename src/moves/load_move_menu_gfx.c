@@ -5,6 +5,7 @@
 #include "../battle_data/pkmn_bank_stats.h"
 #include "../../generated/images/type_icons.h"
 #include "../../generated/images/PSS_icons.h"
+#include "../../generated/images/PSS_icons1.h"
 #include "../../generated/images/hpbox/empty_bar.h"
 
 #define MOVE_NAMES_TAG 0x900
@@ -103,6 +104,17 @@ u8 load_dmg_category_icon(u8 category, s16 x, s16 y, u8 tag)
 {
     struct SpritePalette icon_pal = {(void*)PSS_iconsPal, MOVE_PSS_TAG};
     struct SpriteTiles icon_gfx = {(void*)(PSS_iconsTiles + (category * 128)), 256, MOVE_PSS_TAG + tag};
+    struct Template icon_temp = {MOVE_PSS_TAG + tag, MOVE_PSS_TAG, &pp_icon_oam, nullframe, &icon_gfx, nullrsf,
+                                (ObjectCallback)oac_nullsub};
+    gpu_tile_obj_alloc_tag_and_upload(&icon_gfx);
+    gpu_pal_obj_alloc_tag_and_apply(&icon_pal);
+    return template_instanciate_forward_search(&icon_temp, x, y, 0);
+}
+
+u8 load_small_dmg_category_icon(u8 category, s16 x, s16 y, u8 tag)
+{
+    struct SpritePalette icon_pal = {(void*)PSS_icons1Pal, MOVE_PSS_TAG};
+    struct SpriteTiles icon_gfx = {(void*)(PSS_icons1Tiles + (category * 128)), 256, MOVE_PSS_TAG + tag};
     struct Template icon_temp = {MOVE_PSS_TAG + tag, MOVE_PSS_TAG, &pp_icon_oam, nullframe, &icon_gfx, nullrsf,
                                 (ObjectCallback)oac_nullsub};
     gpu_tile_obj_alloc_tag_and_upload(&icon_gfx);

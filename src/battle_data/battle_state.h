@@ -120,13 +120,13 @@ enum switch_reason {
     PokemonFainted,
     ViewPokemon,
     ForcedSwitch,
+    NormalSwitch,
 };
 
 struct switch_pokemon_data {
     u32 PID;
     u16 species;
-    u16 current_hp;
-    u16 total_hp;
+    pchar health[9];
     u8 ability;
     u16 item;
     u16 stats[5];
@@ -134,17 +134,22 @@ struct switch_pokemon_data {
     u16 move[4];
     u16 pp[4];
     pchar nickname[20];
+    pchar level[6];
+    u8 ailment_effect;
 };
 
 struct switch_data {
     u8 list_count;
     struct switch_pokemon_data s_pkmn_data[6];
+    u8 hpbar_id;
 };
 
 struct switch_menu {
     u8 type_objid[10];
     u8 slider_objid[3];
     u8 icon_objid[6];
+    u8 switch_confirm_box_id;
+    u8 switch_confirm_cursor_id;
     u8 position;
     enum switch_reason reason;
     u8 unswitchable_bank; // used if a pkmn is forced out

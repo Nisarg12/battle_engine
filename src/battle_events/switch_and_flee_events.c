@@ -5,18 +5,20 @@
 #include "../moves/moves.h"
 #include "../battle_text/battle_pick_message.h"
 #include "battle_events/battle_events.h"
+#include "../abilities/battle_abilities.h"
 
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 extern void run_flee(void);
 extern bool b_pkmn_has_type(u8 bank, u8 type);
 extern u16 rand_range(u16 min, u16 max);
-
+extern void pkmn_recall_animation(void);
+extern void sync_battler_struct(u8 bank);
 
 bool bank_trapped(u8 bank)
 {
     if (b_pkmn_has_type(bank, TYPE_GHOST))
         return false;
-    if (HAS_VOLATILE(bank, VOLATILE_TRAPPED)) {
+    if (HAS_VOLATILE(bank, VOLATILE_TRAPPED) || HAS_VOLATILE(bank, VOLATILE_INGRAIN)) {
         return true;
     }
     return false;
@@ -24,14 +26,14 @@ bool bank_trapped(u8 bank)
 
 
 /* Event switch related */
-void switch_battler(u8 switching_bank)
-{
-    /* TODO actual switching */
-    return;
-}
-
 void move_on_switch_cb(u8 attacker)
 {
+    // add ability specific cbs
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].before_switch) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_BEFORE_SWITCH, 0, 0, i, (u32)abilities[ability].before_switch);
+    }
     u16 move = CURRENT_MOVE(attacker);
     // add callbacks specific to field
     if (moves[move].before_switch) {
@@ -47,25 +49,69 @@ void move_on_switch_cb(u8 attacker)
 
 void run_after_switch(u8 attacker)
 {
-    u16 move = CURRENT_MOVE(attacker);
-    if (moves[move].on_start) {
-        add_callback(CB_ON_START, 0, 0, attacker, (u32)moves[move].on_start);
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        if (ACTIVE_BANK(i)) {
+            u8 ability = p_bank[i]->b_data.ability;
+            if (abilities[ability].on_start)
+                add_callback(CB_ON_START, 0, 0, i, (u32)abilities[ability].on_start);
+            u16 move = CURRENT_MOVE(i);
+            if (moves[move].on_start)
+                add_callback(CB_ON_START, 0, 0, i, (u32)moves[move].on_start);
+        }
     }
     // run on start callbacks
     build_execution_order(CB_ON_START);
     battle_master->executing = true;
-    while (battle_master->executing) {
-        pop_callback(attacker, move);
+    while (battle_master->executing)
+        pop_callback(0xFF, NULL);
+}
+
+
+void event_on_start(struct action* current_action)
+{
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        if (ACTIVE_BANK(i)) {
+            u8 ability = p_bank[i]->b_data.ability;
+            if (abilities[ability].on_start)
+                add_callback(CB_ON_START, 0, 0, i, (u32)abilities[ability].on_start);
+            u16 move = CURRENT_MOVE(i);
+            if (moves[move].on_start)
+                add_callback(CB_ON_START, 0, 0, i, (u32)moves[move].on_start);
+        }
     }
+    // run on start callbacks
+    build_execution_order(CB_ON_START);
+    battle_master->executing = true;
+    while (battle_master->executing)
+        pop_callback(0xFF, NULL);
+    end_action(CURRENT_ACTION);
 }
 
 void event_switch(struct action* current_action)
 {
-    move_on_switch_cb(ACTION_BANK);
-    switch_battler(ACTION_BANK);
-    run_after_switch(ACTION_BANK);
-    end_action(current_action);
-    dprintf("tried to switch\n");
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        if (ACTIVE_BANK(i)) {
+            dprintf("sync %d\n", i);
+            sync_battler_struct(i);
+        }
+    }
+    super.multi_purpose_state_tracker = 0;
+    // the recall animation is in the switch scene folder; onlyplayer supported as of now
+    set_callback1(pkmn_recall_animation);
+}
+
+
+void event_pre_switch(struct action* current_action)
+{
+    if (bank_trapped(ACTION_BANK)) {
+        enqueue_message(MOVE_NONE, ACTION_BANK, STRING_TRAPPED, 0);
+        end_action(CURRENT_ACTION);
+        return;
+    } else {
+        move_on_switch_cb(ACTION_BANK);
+        enqueue_message(MOVE_NONE, ACTION_BANK, STRING_RETREAT_MON, 0);
+        CURRENT_ACTION->event_state++;
+    }
 }
 
 

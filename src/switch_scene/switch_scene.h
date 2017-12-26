@@ -6,12 +6,15 @@
 #define SLIDER_GFX_TAG 0xD740
 #define ICON_PAL_TAG 0xDAC0
 #define ICON_GFX_TAG 0xD75A
+#define CONFIRM_BOX_TAG 0x519
 
 // positions
 #define Y_POS_MID_ONE 38
 #define Y_POS_MID_TWO 62
 #define Y_POS_MID_THREE 87
 #define Y_POS_MID_FOUR 110
+#define CURSOR_SHIFT_POS 111
+#define CURSOR_CANCEL_POS 125
 
 // text palette related
 #define rgb5(r, g, b) (u16)((r >> 3) | ((g >> 3) << 5) | ((b >> 3) << 10))
@@ -33,7 +36,9 @@ extern bool nature_stat_boosted(u8 stat, struct Pokemon *pokemon);
 #define SWB_ACC 9
 #define SWB_PP 10
 #define SWB_NAME 11
-
+#define SWB_LVL 12
+#define SWB_HP 13
+#define SWB_MAX 13
 #define SWM_LOG (battle_master->switch_main.sd)
 
 
@@ -49,9 +54,15 @@ extern struct TextboxTemplate switch_boxes[];
 
 
 extern u8 load_dmg_type_icon(u8 type, s16 x, s16 y, u8 tag);
-extern u8 load_dmg_category_icon(u8 category, s16 x, s16 y, u8 tag);
+extern u8 load_small_dmg_category_icon(u8 category, s16 x, s16 y, u8 tag);
 extern void vblank_cb_no_merge(void);
 extern void c2_switch_menu(void);
 extern void oac_nullsub(struct Object* obj);
+extern const struct OamData icon_oam;
+extern const struct OamData slider_oam;
+extern const struct OamData confirm_box_oam;
+extern const struct OamData cursor_confirm_oam;
+extern struct RotscaleFrame *switch_scale_table[];
+extern struct RotscaleFrame *switch_scale_table_full[];
 
 #endif /* SWITCH_SCENE_H_ */

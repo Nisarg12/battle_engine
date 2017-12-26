@@ -191,6 +191,9 @@ enum battle_string_ids {
     STRING_BEAK_BLAST,
     STRING_ENCOUNTER_WILD,
     STRING_HEART_SWAP,
+    STRING_RETREAT_MON,
+    STRING_SEND_OUT,
+    STRING_TRAPPED,
     STRINGS_TABLE_MAX,
 };
 const static pchar encounter_wild_text[] = _("A wild {DEFENDING_MON} appeared!\pGo! {ATTACKING_MON}!");
@@ -216,8 +219,7 @@ static const pchar str_curse_dmg_o[] = _("{FOE}{ATTACKING_MON} is afflicted\nby 
 static const pchar str_magnitude_amount_o[] = _("MAGNITUDE {STR_VAR_1}!");
 static const pchar str_no_target_o[] = _("But there was no target!");
 static const pchar str_failed_alone[] = _("But it failed!");
-static const pchar str_immunity_p[] = _("{FOE}{DEFENDING_MON}’s {ABILITY_DEFENDER}\nmade it immune!");
-static const pchar str_immunity_o[] = _("{DEFENDING_MON}’s {ABILITY_ATTACKER}\nmade it immune!");
+static const pchar str_immunity_p[] = _("{FOE}{ATTACKING_MON}’s {ABILITY}\nmade it immune!");
 static const pchar str_charging_up_razorwind_o[] = _("{FOE}{ATTACKING_MON} whipped\nup a whirlwind!");
 static const pchar str_solarbeam_o[] = _("{FOE}{ATTACKING_MON} absorbed\nlight!");
 static const pchar str_freeze_shock_o[] = _("{FOE}{ATTACKING_MON} became cloaked\nin a freezing light!");
@@ -230,7 +232,7 @@ static const pchar str_damp_o[] = _("{FOE}{ATTACKING_MON} couldn’t use\n{ATTAC
 static const pchar str_cure_status_o[] = _("{FOE}{ATTACKING_MON}’s cured\nits status!");
 static const pchar str_effect_ended_o[] = _("{FOE}{ATTACKING_MON}’s\n{ATTACK_NAME} ended.");
 static const pchar str_weather_gone[] = _("The effects of the weather\ndisappeared.");
-static const pchar str_gained_type_o[] = _("{FOE}{ATTACKING_MON} gained {TYPE}\nfrom {ABILITY_DEFENDER}!");
+static const pchar str_gained_type_o[] = _("{FOE}{ATTACKING_MON} gained {TYPE}\nfrom {ABILITY}!");
 static const pchar str_confusion_end_o[] = _("{FOE}{ATTACKING_MON} is\nno longer confused!");
 static const pchar str_dragout_failed_o[] = _("{FOE}{ATTACKING_MON} couldn’t be\ndragged out of battle!");
 static const pchar str_stat_mod_harsh_drop_o[] = _("{FOE}{ATTACKING_MON}’s {STAT_NAME}\ndropped harshly!");
@@ -395,6 +397,9 @@ static const pchar str_sapped[] = _("{FOE}{ATTACKING_MON}’s health was\nsapped
 static const pchar str_focus_tight[] = _("{FOE}{ATTACKING_MON} is tightening\nits focus!");
 static const pchar str_beak_blast[] = _("{FOE}{ATTACKING_MON} started heating\nup its beak!");
 static const pchar str_heart_swap[] = _("{FOE}{ATTACKING_MON} switched stat\nchanges with the target!");
+static const pchar str_come_back[] = _("{ATTACKING_MON}, come back!");
+static const pchar str_send_out[] = _("Go! {ATTACKING_MON}!");
+static const pchar str_trapped[] = _("{FOE}{ATTACKING_MON} is trapped\nand cannot switch!");
 
 // stat names
 static const pchar str_stat_atk[] = _("attack");
@@ -439,7 +444,8 @@ static const pchar* battle_strings[STRINGS_TABLE_MAX] = {
    (pchar*)str_magnitude_amount_o, // 8
    (pchar*)&str_no_target_o, // 9
    (pchar*)&str_failed_alone, // 10
-   (pchar*)&str_immunity_p, (pchar*)&str_immunity_o, // 11, 12
+   (pchar*)&str_immunity_p,
+   (pchar*)&str_immunity_p,
    (pchar*)&str_charging_up_razorwind_o, // 13
    (pchar*)&str_solarbeam_o, // 14
    (pchar*)&str_freeze_shock_o, // 15
@@ -614,6 +620,9 @@ static const pchar* battle_strings[STRINGS_TABLE_MAX] = {
    (pchar*)&str_beak_blast, // 189
    (pchar*)&encounter_wild_text, // 190
    (pchar*)&str_heart_swap, // 191
+   (pchar*)&str_come_back, // 192
+   (pchar*)&str_send_out, // 193
+   (pchar*)&str_trapped, // 194
 
 };
 

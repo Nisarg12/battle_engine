@@ -32,6 +32,8 @@ s8 get_move_priority(u8 bank)
     u16 move = CURRENT_MOVE(bank);
 
     /* update selected move's innate priority */
+    if (B_MOVE_PRIORITY(bank))
+        return B_MOVE_PRIORITY(bank);
     s8 priority = 0;
     priority += MOVE_PRIORITY(move);
     B_MOVE_PRIORITY(bank) = priority;
@@ -233,4 +235,23 @@ bool moves_last(u8 bank)
         }
     }
     return false;
+}
+
+
+u8 count_usable_pokemon(u8 side)
+{
+    struct Pokemon* p = side ? &party_opponent[0] : &party_player[0];
+    u8 count = 0;
+    for (u8 i = 0; i < 6; i++) {
+        u16 species = pokemon_getattr(&p[i], REQUEST_SPECIES, NULL);
+        bool is_egg = pokemon_getattr(&p[i], REQUEST_IS_EGG, NULL);
+        u16 current_hp = pokemon_getattr(&p[i], REQUEST_CURRENT_HP, NULL);
+
+        // valid if it's a valid species, isn't an egg, and is alive.
+        if ((species < SPECIES_MAX) && (species > SPECIES_MISSINGNO) &&
+         (!is_egg) && (current_hp > 0)) {
+            count++;
+        }
+    }
+    return count;
 }

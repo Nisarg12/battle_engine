@@ -15,6 +15,32 @@ void stat_boost(u8 bank, u8 stat_id, s8 amount)
 {
     if (!amount)
         return;
+    // back up cbs
+    u8 old_index = CB_EXEC_INDEX;
+    u32* old_execution_array = push_callbacks();
+
+    u8 ability = p_bank[bank]->b_data.ability;
+    if ((abilities[ability].on_stat_boost_mod) && (ACTIVE_BANK(bank))) {
+        u8 cb_id = add_callback(CB_ON_STAT_BOOST_MOD, 0, 0, bank, (u32)abilities[ability].on_stat_boost_mod);
+        CB_MASTER[cb_id].data_ptr = ((((amount < 0)? 1 : 0) << 4) | (ABS(amount)));
+    }
+
+    // execute cbs
+    build_execution_order(CB_ON_STAT_BOOST_MOD);
+    battle_master->executing = true;
+    while (battle_master->executing) {
+        u8 result_set = pop_callback(bank, stat_id);
+        if (result_set && battle_master->executing) {
+            amount = result_set & 0x7;
+            if (result_set & 16) {
+                amount = -amount;
+            }
+        }
+    }
+
+    restore_callbacks(old_execution_array);
+    CB_EXEC_INDEX = old_index;
+
     s8 new_amount = amount;
     s8* stat_stored;
     switch (stat_id + 1) {
@@ -168,6 +194,12 @@ void set_status(u8 bank, enum Effect status)
     // back up cbs
     u8 old_index = CB_EXEC_INDEX;
     u32* old_execution_array = push_callbacks();
+
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].on_status) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_STATUS, 0, 0, i, (u32)abilities[ability].on_status);
+    }
 
     // execute cbs
     build_execution_order(CB_ON_STATUS);

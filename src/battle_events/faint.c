@@ -74,11 +74,11 @@ void do_faint()
             objects[p_bank[bank]->objid].callback = obj_battler_fall_through;
             objects[p_bank[bank]->objid].priv[0] = 0;
             objects[p_bank[bank]->objid].priv[1] = 0;
-            objects[p_bank[bank]->objid].priv[2] = p_bank[bank]->objid_hpbox[0];
-            objects[p_bank[bank]->objid].priv[3] = p_bank[bank]->objid_hpbox[1];
-            objects[p_bank[bank]->objid].priv[4] = p_bank[bank]->objid_hpbox[2];
-            objects[p_bank[bank]->objid].priv[5] = p_bank[bank]->objid_hpbox[3];
-
+            for (u8 i = 0; i < 4; i++) {
+                objects[p_bank[bank]->objid].priv[2 + i] = p_bank[bank]->objid_hpbox[i];
+                p_bank[bank]->objid_hpbox[i] = 0x3F;
+            }
+            p_bank[bank]->objid = 0x3F;
 
             enqueue_message(0, bank, STRING_FAINTED, 0);
             super.multi_purpose_state_tracker++;

@@ -33,7 +33,7 @@
 #define CB_ON_BEFORE_STAT_MOD 18
 #define CB_ON_DISABLE_MOVE 19 // run before  before turn. Resets banks and prompts move selection on fail
 #define CB_ON_FAINT_CHECK 20
-
+#define CB_ON_STAT_BOOST_MOD 21
 
 
 struct anonymous_callback {

@@ -89,11 +89,15 @@ enum Volatiles {
     VOLATILE_DIVE,
     VOLATILE_DIG,
     VOLATILE_FOCUS_ENERGY,
+    VOLATILE_GASTRO_ACID,
+    VOLATILE_FAIRY_BLOCK,
+    VOLATILE_DRIZZLE,
 };
 
 
 struct local_battler_data {
     // Base stats in battle
+    pchar name[12];
     u16 species;
     u16 current_hp;
     u16 total_hp;

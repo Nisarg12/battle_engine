@@ -13,7 +13,7 @@ const pchar str_invalid_num[] = _("---");
 u16 switch_text_pal[] = {rgb5(255, 0, 255),   rgb5(248, 248, 248), rgb5(112, 112, 112), rgb5(96, 96, 96),
                                 rgb5(208, 208, 208), rgb5(76, 154, 38),   rgb5(102, 194, 66),  rgb5(168, 75, 76),
                                 rgb5(224, 114, 75),  rgb5(180, 124, 41),  rgb5(241, 188, 60),  rgb5(255, 0, 255),
-                                rgb5(255, 0, 255),   rgb5(255, 0, 255),   rgb5(255, 0, 255),   rgb5(255, 0, 255)};
+                                rgb5(255, 0, 255),   rgb5(255, 0, 255),   rgb5(255, 133, 200),   rgb5(64, 200, 248)};
 
 // Text color for nature highlighting
 struct TextColor switch_color = {0, 3, 4};
@@ -142,6 +142,26 @@ struct TextboxTemplate switch_boxes[] = {
         .height = 2,
         .pal_id = 15,
         .charbase = 355,
+    },
+    {
+        /*lvl name*/
+        .bg_id = 0,
+        .x = 19,
+        .y = 0,
+        .width = 3,
+        .height = 2,
+        .pal_id = 15,
+        .charbase = 465,
+    },
+    {
+        /*hp ratio*/
+        .bg_id = 0,
+        .x = 22,
+        .y = 0,
+        .width = 6,
+        .height = 2,
+        .pal_id = 15,
+        .charbase = 496,
     },
     {
         .bg_id = 0xFF, /* marks the end of the tb array */

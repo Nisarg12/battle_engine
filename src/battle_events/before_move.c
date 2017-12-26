@@ -5,6 +5,7 @@
 #include "../moves/moves.h"
 #include "../battle_text/battle_pick_message.h"
 #include "battle_events/battle_events.h"
+#include "../abilities/battle_abilities.h"
 
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 
@@ -19,6 +20,11 @@ enum BeforeMoveStatus {
 
 enum BeforeMoveStatus before_move_cb(u8 attacker)
 {
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].before_move) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_BEFORE_MOVE, 0, 0, i, (u32)abilities[ability].before_move);
+    }
     u16 move = CURRENT_MOVE(attacker);
     // add callbacks specific to field
     if (moves[move].before_move) {

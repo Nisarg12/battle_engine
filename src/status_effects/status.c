@@ -46,7 +46,7 @@ u8 sleep_on_residual(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
 void sleep_on_inflict(u8 bank)
 {
 	if ((BANK_ABILITY(bank) != ABILITY_COMATOSE) || (BANK_ABILITY(bank) != ABILITY_INSOMNIA) ||
-	(BANK_ABILITY(bank) != ABILITY_VITAL_SPIRIT) || (BANK_ABILITY(bank) != ABILITY_SWEET_VEIL)) {
+	(BANK_ABILITY(bank) != ABILITY_VITALSPIRIT) || (BANK_ABILITY(bank) != ABILITY_SWEETVEIL)) {
 		u8 ailment = rand_range(1, 4);
 		p_bank[bank]->b_data.status_turns = ailment;
 		p_bank[bank]->b_data.status = AILMENT_SLEEP;

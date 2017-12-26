@@ -16,8 +16,10 @@ extern void dprintf(const char * str, ...);
 extern void option_selection2(void);
 extern void switch_scene_main(void);
 extern void free_unused_objs(void);
-void event_peek_message(struct action* current_action);
-void CpuFastSet(void* src, void* dst, u32 mode);
+extern void event_peek_message(struct action* current_action);
+extern void CpuFastSet(void* src, void* dst, u32 mode);
+extern void sync_battler_struct(u8 bank);
+extern void set_active_movement(u8 task_id);
 
 /* Fight menu and move menu selection. Preperation to go into battle loop*/
 
@@ -51,6 +53,18 @@ void option_selection(u8 bank)
     super.multi_purpose_state_tracker = BaseMenuInitialize;
 }
 
+void jump_switch_menu(enum switch_reason reason)
+{
+    fade_screen(0xFFFFFFFF, 0, 0, 16, 0x0000);
+    task_del(task_find_id_by_functpr(set_active_movement));
+    free_unused_objs();
+    battle_master->switch_main.position = 0;
+    battle_master->fight_menu_content_spawned  = 0;
+    battle_master->switch_main.reason = reason;
+    super.multi_purpose_state_tracker = 0;
+    sync_battler_struct(battle_master->option_selecting_bank);
+    set_callback1(switch_scene_main);
+}
 
 void option_selection2()
 {
@@ -131,12 +145,7 @@ void option_selection2()
             }
         case SwitchOptionSelected:
             // POKEMON selection from fight menu
-            fade_screen(0xFFFFFFFF, 0, 0, 16, 0x0000);
-            free_unused_objs();
-            battle_master->switch_main.position = 0;
-            battle_master->fight_menu_content_spawned  = 0;
-            super.multi_purpose_state_tracker = 0;
-            set_callback1(switch_scene_main);
+            jump_switch_menu(ViewPokemon);
             break;
         case BagOptionSelected:
             // BAG selected from fight menu

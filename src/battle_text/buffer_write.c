@@ -3,14 +3,13 @@
 #include "../battle_data/pkmn_bank_stats.h"
 #include "../moves/moves.h"
 #include "battle_pick_message.h"
+#include "../abilities/battle_abilities.h"
 
 extern void dprintf(const char * str, ...);
 
 void buffer_write_pkmn_nick(pchar* buffer, u8 bank)
 {
-    memcpy(buffer, p_bank[bank]->this_pkmn->base.nick, sizeof(p_bank[bank]->this_pkmn->base.nick));
-    buffer[sizeof(p_bank[bank]->this_pkmn->base.nick)] = 0xFF;
-
+    memcpy(buffer, p_bank[bank]->b_data.name, sizeof(p_bank[bank]->b_data.name));
 }
 
 void buffer_pkmn_nick_arbitrary(pchar* buffer, u8 bank, u8 slot)
@@ -36,7 +35,7 @@ void buffer_write_move_name(pchar* buffer, u16 move_id)
 
 void buffer_write_ability_name(pchar* buffer, u8 ability)
 {
-    pstrcpy(buffer, pokemon_ability_names[ability]);
+    pstrcpy(buffer, &ability_names[ability][0]);
 }
 
 void buffer_write_move_type(pchar* buffer, u16 move)
@@ -105,7 +104,7 @@ void buffer_write_status_name(pchar* buffer, u8 status_id)
 }
 
 
-void fdecoder_battle(const pchar* buffer, u8 bank, u16 move_id, u16 move_effect_id)
+void fdecoder_battle(pchar* buffer, u8 bank, u16 move_id, u16 move_effect_id)
 {
     u16 len = pstrlen(buffer);
     pchar* result = (pchar*)malloc((len < 50) ? 100 : len * 2);
@@ -135,13 +134,10 @@ void fdecoder_battle(const pchar* buffer, u8 bank, u16 move_id, u16 move_effect_
                     result_index = pstrlen(result);
                     break;
                 case 0x12:
-                    // ability Defending mon
-                    {
-                        u8 target_bank = p_bank[bank]->b_data.my_target;
-                        buffer_write_ability_name(&result[result_index], BANK_ABILITY(target_bank));
+                    // ability buff
+                        buffer_write_ability_name(&result[result_index], BANK_ABILITY(bank));
                         result_index = pstrlen(result);
                         break;
-                    }
                 case 0x13:
                     // ability Attacking mon
                     {

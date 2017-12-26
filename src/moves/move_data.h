@@ -18,8 +18,6 @@ extern u8 sky_attack_before_move(u8 user, u8 src, u16 move, struct anonymous_cal
 extern u8 fly_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 bounce_before_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 gust_on_invul_hit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
-extern u8 whirlwind_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
-extern u8 whirlwind_on_effect_cb(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern void acrobatics_on_base_power_move(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 partially_trapped_effect_cb(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 minimize_on_effect_cb(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
@@ -271,7 +269,19 @@ extern u8 heal_pulse_on_tryhit_move(u8 user, u8 src, u16 move, struct anonymous_
 extern u8 self_destruct_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 after_you_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 extern u8 quash_on_tryhit(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
-
+extern void pursuit_on_basepower(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern void pursuit_on_before_turn(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 role_play_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 skill_swap_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 gastro_acid_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 worry_seed_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 dragon_tail_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 volt_switch_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 parting_shot_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 memento_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 lunar_dance_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 block_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
+extern u8 fairy_lock_on_effect(u8 user, u8 src, u16 move, struct anonymous_callback* acb);
 
 /* User stats */
 extern struct move_procs user_lower_atk_1;

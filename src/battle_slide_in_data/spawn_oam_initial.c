@@ -21,7 +21,7 @@
 
 const struct OamData opp_oam = {
                                 .y = 0,
-                                .affine_mode = 0,
+                                .affine_mode = 1,
                                 .obj_mode = 0,
                                 .mosaic = 0,
                                 .bpp = 0,

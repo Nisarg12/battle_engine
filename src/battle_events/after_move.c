@@ -5,6 +5,7 @@
 #include "../moves/moves.h"
 #include "../battle_text/battle_pick_message.h"
 #include "battle_events/battle_events.h"
+#include "../abilities/battle_abilities.h"
 
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 extern bool is_grounded(u8 bank);
@@ -14,6 +15,11 @@ void event_after_move(struct action* current_move)
 {
     u8 bank = current_move->action_bank;
     u16 move = CURRENT_MOVE(bank);
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].on_after_move) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_AFTER_MOVE, 0, 0, i, (u32)abilities[ability].on_after_move);
+    }
     // add callbacks specific to field
     if (moves[move].on_after_move) {
         add_callback(CB_ON_AFTER_MOVE, 0, 0, bank, (u32)moves[move].on_after_move);

@@ -6,18 +6,33 @@ extern void ailment_decode(u8 bank, u8 ailment);
 extern u8 ailment_encode(u8 bank);
 extern u8 get_ability(struct Pokemon* p);
 extern void status_graphical_update(u8 bank, enum Effect status);
+extern const u8 player_ability;
+extern const u8 opponent_ability;
+extern void battle_start_ailment_callback_init(u8 bank);
 
 
 void update_pbank(u8 bank, struct update_flags* flags)
 {
     // base stats
     u16 species = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_SPECIES, NULL);
+    memcpy(p_bank[bank]->b_data.name, p_bank[bank]->this_pkmn->base.nick, sizeof(party_player[0].base.nick));
+    p_bank[bank]->b_data.name[11] = 0xFF;
+    p_bank[bank]->b_data.is_active_bank = true;
+
     p_bank[bank]->b_data.weight = pokemon_get_weight(species_to_pokedex_index(species), 1) / 10;
     p_bank[bank]->b_data.species = species;
     p_bank[bank]->b_data.gender = pokemon_get_gender(p_bank[bank]->this_pkmn);
     p_bank[bank]->b_data.current_hp = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_CURRENT_HP, NULL);;
     p_bank[bank]->b_data.total_hp = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_TOTAL_HP, NULL);;
-    p_bank[bank]->b_data.ability = get_ability(p_bank[bank]->this_pkmn);
+
+    if (SIDE_OF(bank)) {
+        p_bank[bank]->b_data.ability = opponent_ability;
+        dprintf("ability_opp = %d\n", opponent_ability);
+    } else {
+        p_bank[bank]->b_data.ability = player_ability;
+    }
+    //get_ability(p_bank[bank]->this_pkmn);
+
     p_bank[bank]->b_data.item = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_HELD_ITEM, NULL);
     p_bank[bank]->b_data.level = pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_LEVEL, NULL);
     p_bank[bank]->b_data.poke_ball = 0;
@@ -49,9 +64,6 @@ void update_pbank(u8 bank, struct update_flags* flags)
     p_bank[bank]->b_data.will_move = true;
 
     // status ailment
-    ailment_decode(bank, pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, NULL));
-    extern void battle_start_ailment_callback_init(u8 bank);
-    battle_start_ailment_callback_init(bank);
     if (!flags->pass_stats) {
         p_bank[bank]->b_data.attack = 0;
         p_bank[bank]->b_data.defense = 0;
@@ -89,6 +101,8 @@ void update_pbank(u8 bank, struct update_flags* flags)
         p_bank[bank]->b_data.v_status2 = 0;
         p_bank[bank]->b_data.is_grounded = 0;
     } else {
+        ailment_decode(bank, pokemon_getattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, NULL));
+        battle_start_ailment_callback_init(bank);
         status_graphical_update(bank, p_bank[bank]->b_data.status);
     }
 
@@ -102,18 +116,21 @@ void update_pbank(u8 bank, struct update_flags* flags)
     p_bank[bank]->b_data.stockpile_uses = 0;
     p_bank[bank]->b_data.stockpile_def_boost = 0;
     p_bank[bank]->b_data.stockpile_spdef_boost = 0;
+
+    p_bank[bank]->b_data.slot = GET_SLOT_FROM_PTR((SIDE_OF(bank) ? (u32)&party_opponent[0] : (u32)&party_player[0]), (u32)p_bank[bank]->this_pkmn, sizeof(struct Pokemon));
 }
 
 
 void sync_battler_struct(u8 bank)
 {
+    struct Pokemon* p = SIDE_OF(bank) ? &party_opponent[p_bank[bank]->b_data.slot] : &party_player[p_bank[bank]->b_data.slot];
     u16 c_hp = p_bank[bank]->b_data.current_hp;
-    u8 ailment = ailment_encode(bank);
-    pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_CURRENT_HP, &c_hp);
-    pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_STATUS_AILMENT, &ailment);
+    u32 ailment = ailment_encode(bank);
+    pokemon_setattr(p, REQUEST_CURRENT_HP, &c_hp);
+    pokemon_setattr(p, REQUEST_STATUS_AILMENT, &ailment);
     for (u8 i = 0; i < 4; i++) {
         u8 pp = B_GET_MOVE_PP(bank, i);
-        pokemon_setattr(p_bank[bank]->this_pkmn, REQUEST_PP1 + i, &pp);
+        pokemon_setattr(p, REQUEST_PP1 + i, &pp);
     }
 }
 

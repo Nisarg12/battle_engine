@@ -4,6 +4,7 @@
 #include "../battle_data/battle_state.h"
 #include "../moves/moves.h"
 #include "../battle_text/battle_pick_message.h"
+#include "../abilities/battle_abilities.h"
 
 extern u16 rand_range(u16, u16);
 extern bool b_pkmn_has_type(u8 bank, enum PokemonType type);
@@ -81,7 +82,11 @@ u16 get_base_damage(u8 attacker, u8 defender, u16 move)
     if (B_MOVE_IS_STATUS(attacker))
         return 0;
 
-
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].on_base_power) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_BASE_POWER_MOVE, 0, 0, i, (u32)abilities[ability].on_base_power);
+    }
     // add base power callbacks specific to field
     if (moves[move].on_base_power_move) {
         add_callback(CB_ON_BASE_POWER_MOVE, 0, 0, attacker, (u32)moves[move].on_base_power_move);
@@ -258,7 +263,11 @@ s16 get_damage(u8 attacker, u8 defender, u16 move)
         }
     }
     B_MOVE_DMG(attacker) = dmg;
-
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].on_damage) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_DAMAGE_MOVE, 0, 0, i, (u32)abilities[ability].on_damage);
+    }
     // add base power callbacks specific to field
     if (moves[move].on_damage_move) {
         add_callback(CB_ON_DAMAGE_MOVE, 0, 0, attacker, (u32)moves[move].on_damage_move);

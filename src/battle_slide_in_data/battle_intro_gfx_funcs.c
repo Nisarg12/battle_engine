@@ -126,9 +126,16 @@ void battle_scene_intialize_sprites()
     bs_env_windows->partner_trainer_objid = 0x3F;
     switch (battle_type_flag) {
         case BATTLE_MODE_WILD:
+            // initialize p_bank pkmn name and pointer for player
             p_bank[PLAYER_SINGLES_BANK]->this_pkmn = pick_first_usable_pokemon(&party_player[0], 6);
-            p_bank[OPPONENT_SINGLES_BANK]->this_pkmn = pick_first_usable_pokemon(&party_opponent[0], 6);
+            memcpy(p_bank[PLAYER_SINGLES_BANK]->b_data.name, p_bank[PLAYER_SINGLES_BANK]->this_pkmn->base.nick, sizeof(party_player[0].base.nick));
+            p_bank[PLAYER_SINGLES_BANK]->b_data.name[11] = 0xFF;
             p_bank[PLAYER_SINGLES_BANK]->b_data.is_active_bank = true;
+
+            // same for opponent
+            p_bank[OPPONENT_SINGLES_BANK]->this_pkmn = pick_first_usable_pokemon(&party_opponent[0], 6);
+            memcpy(p_bank[OPPONENT_SINGLES_BANK]->b_data.name, p_bank[OPPONENT_SINGLES_BANK]->this_pkmn->base.nick, sizeof(party_player[0].base.nick));
+            p_bank[OPPONENT_SINGLES_BANK]->b_data.name[11] = 0xFF;
             p_bank[OPPONENT_SINGLES_BANK]->b_data.is_active_bank = true;
             create_sprites_wild_battlers();
             break;

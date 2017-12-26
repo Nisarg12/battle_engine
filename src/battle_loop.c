@@ -19,8 +19,10 @@ extern u16 bank_interpret_selected_move(u16);
 
 
 EventCallback wild_battle_events[] = {
+    event_on_start, // pre turn effects
     /* Pre-move */
     event_run_flee,
+    event_pre_switch,
     event_switch,
 
     /* Run Move */
@@ -50,18 +52,18 @@ EventCallback wild_battle_events[] = {
     event_set_inactive,
     event_residual_effects,
     wild_battle_status_update,
+    event_forced_switch,
     end_battle,
 };
 
 
 void battle_loop()
 {
-
     CURRENT_ACTION = ACTION_HEAD;
     if (ACTION_HEAD != NULL) {
-        dprintf("action: %x\n", ACTION_HEAD);
+    //    dprintf("action: %x\n", ACTION_HEAD);
         // Don't run actions for fainted banks
-        if (!ACTIVE_BANK(ACTION_HEAD->action_bank)) {
+        if (!(ACTIVE_BANK(ACTION_HEAD->action_bank) || ACTION_HEAD->active_override)) {
             end_action(ACTION_HEAD);
             return;
         }
@@ -100,7 +102,8 @@ void validate_player_selected_move()
 void end_battle(struct action* a)
 {
     for (u8 i = 0; i < BANK_MAX; i++) {
-        sync_battler_struct(i);
+        if (ACTIVE_BANK(i))
+            sync_battler_struct(i);
     }
     clear_actions();
     free(battle_master);

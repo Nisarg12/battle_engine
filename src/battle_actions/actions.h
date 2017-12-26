@@ -26,6 +26,7 @@ struct action {
     u8 prankstered : 1;
     u8 has_bounced : 1;
     u8 reset_move_config : 1;
+    u8 active_override : 1;
     s16 priv[5];
     struct action* prev_action;
     struct action* next_action;

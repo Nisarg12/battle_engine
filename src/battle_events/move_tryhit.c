@@ -5,6 +5,7 @@
 #include "../moves/moves.h"
 #include "../battle_text/battle_pick_message.h"
 #include "battle_events/battle_events.h"
+#include "../abilities/battle_abilities.h"
 
 extern bool enqueue_message(u16 move, u8 bank, enum battle_string_ids id, u16 effect);
 extern u16 rand_range(u16 min, u16 max);
@@ -20,6 +21,11 @@ enum TryHitMoveStatus {
 
 enum TryHitMoveStatus move_tryhit(u8 attacker, u8 defender, u16 move)
 {
+    for (u8 i = 0; i < BANK_MAX; i++) {
+        u8 ability = p_bank[i]->b_data.ability;
+        if ((abilities[ability].on_tryhit) && (ACTIVE_BANK(i)))
+            add_callback(CB_ON_TRYHIT_MOVE, 0, 0, i, (u32)abilities[ability].on_tryhit);
+    }
     // add callbacks specific to field
     if (moves[move].on_tryhit_move) {
         add_callback(CB_ON_TRYHIT_MOVE, 0, 0, attacker, (u32)moves[move].on_tryhit_move);

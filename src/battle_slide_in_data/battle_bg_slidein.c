@@ -136,6 +136,8 @@ void intro_wild_battle()
         }
         case 8:
         {
+            interrupts_disable(2);
+            hblank_handler_set(NULL);
             vblank_handler_set((SuperCallback)vblank_cb_merge_tbox);
             // light up opponents gradually and disable entry image
             u8 t_id = task_add(task_lightup_objs, 0x1);
