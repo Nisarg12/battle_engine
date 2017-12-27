@@ -77,12 +77,9 @@ void start_wild_battle()
             sort_active_banks(&active_banks[0], index);
 
             for (u8 i = 0; i < index; i++) {
-                dprintf("%d bank on_start being checked\n", active_banks[i]);
                 if (ACTIVE_BANK(active_banks[i])) {
                     u8 ability = p_bank[active_banks[i]]->b_data.ability;
-                    dprintf("ability for bank %d is %d\n", active_banks[i], ability);
                     if (abilities[ability].on_start) {
-                        dprintf("trying to run a callback\n");
                         abilities[ability].on_start(NULL, i, NULL, NULL);
                     }
                 }

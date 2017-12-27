@@ -31,7 +31,6 @@ void drizzle_on_start(u8 user, u8 src, u16 move, struct anonymous_callback* acb)
     if (HAS_VOLATILE(VOLATILE_DRIZZLE, src)) return;
     ADD_VOLATILE(VOLATILE_DRIZZLE, src);
     if (battle_master->field_state.is_raining) return;
-    dprintf("set weather to rain\n");
     set_weather(WEATHER_RAIN);
 }
 

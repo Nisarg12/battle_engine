@@ -6,7 +6,6 @@
 #include "../generated/images/battle_terrains/grass/grass_bg.h"
 #include "../../generated/images/battle_terrains/grass/grass_entry.h"
 #include "../battle_text/battle_textbox_gfx.h"
-#include "../libgba_assets/gba_dma.h"
 
 extern void CpuFastSet(void*, void*, u32);
 /* Standard BG configuration for battle start */

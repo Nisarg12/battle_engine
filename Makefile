@@ -6,8 +6,8 @@ include $(DEVKITARM)/base_tools
 
 #-------------------------------------------------------------------------------
 ifdef ($(PAGB_INCLUDE),)
-	export INCLUDE := -I deps/g3headers/build/include -I $(SRC) -I .
-	export LDFLAGS := -T layout.ld -T deps/g3headers/build/linker/$(ROM_CODE).ld -r
+export INCLUDE := -I deps/g3headers/build/include -I $(SRC) -I .
+export LDFLAGS := -T layout.ld -T deps/g3headers/build/linker/$(ROM_CODE).ld -r
 else
 export INCLUDE := -I $(PAGB_INCLUDE)/include -I $(SRC) -I .
 export LDFLAGS := -T layout.ld -T $(PAGB_INCLUDE)/linker/$(ROM_CODE).ld -r
