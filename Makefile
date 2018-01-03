@@ -5,13 +5,7 @@ endif
 include $(DEVKITARM)/base_tools
 
 #-------------------------------------------------------------------------------
-ifdef ($(PAGB_INCLUDE),)
-export INCLUDE := -I deps/g3headers/build/include -I $(SRC) -I .
-export LDFLAGS := -T layout.ld -T deps/g3headers/build/linker/$(ROM_CODE).ld -r
-else
-export INCLUDE := -I $(PAGB_INCLUDE)/include -I $(SRC) -I .
-export LDFLAGS := -T layout.ld -T $(PAGB_INCLUDE)/linker/$(ROM_CODE).ld -r
-endif
+
 
 
 export BUILD := build
@@ -22,14 +16,22 @@ export ROM_CODE := BPRE
 export LD := $(PREFIX)ld
 export PREPROC := deps/pokeruby/tools/preproc/preproc
 export CHARMAP := charmap.txt
-export INCLUDE := -I deps/g3headers/build/include -I $(SRC) -I .
 export ASFLAGS := -mthumb
+
+export DEPDIR = .d
+export DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
+
+ifdef ($(PAGB_INCLUDE),)
+export INCLUDE := -I deps/g3headers/build/include -I $(SRC) -I .
+export LDFLAGS := -T layout.ld -T deps/g3headers/build/linker/$(ROM_CODE).ld -r
+else
+export INCLUDE := -I $(PAGB_INCLUDE)/include -I $(SRC) -I .
+export LDFLAGS := -T layout.ld -T $(PAGB_INCLUDE)/linker/$(ROM_CODE).ld -r
+endif
+
 export CFLAGS := -g -Og -Wall -mthumb -std=c11 $(INCLUDE) -mcpu=arm7tdmi \
 	-march=armv4t -mno-thumb-interwork -fno-inline -fno-builtin -mlong-calls -DROM_$(ROM_CODE) \
 	-fdiagnostics-color
-export LDFLAGS := -T layout.ld -T deps/g3headers/build/linker/$(ROM_CODE).ld -r
-export DEPDIR = .d
-export DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 
 #-------------------------------------------------------------------------------
 
